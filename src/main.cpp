@@ -15,21 +15,30 @@
  http://www.gnu.org/licenses/.
 */
 
-#include "t-hmi-c64/Main.h"
+#include "t-hmi-c64/C64.h"
 #include <esp_log.h>
 #include <M5Cardputer.h>
+#include "sd.hpp"
 
 static const char *TAG = "T-HMI-C64";
 
 void setup()
 {
   M5Cardputer.begin();
-  Serial.begin(115200);
+  sdcard.init();
+
+  disableCore0WDT();
+  disableCore1WDT();
+}
+
+void loop()
+{
+  String path = menu();
+  M5Cardputer.Display.fillScreen(TFT_BLACK);
+
   vTaskDelay(1000 / portTICK_PERIOD_MS);
   ESP_LOGI(TAG, "start setup...");
   ESP_LOGI(TAG, "setup() running on core %d", xPortGetCoreID());
-  Main::setup();
+  C64::run(path.c_str());
   ESP_LOGI(TAG, "setup done");
 }
-
-void loop() { Main::loop(); }

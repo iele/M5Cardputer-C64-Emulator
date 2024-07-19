@@ -16,7 +16,7 @@
 */
 #include "Joystick.h"
 #include "Config.h"
-#include "JoystickInitializationException.h"
+//#include "JoystickInitializationException.h"
 #include <driver/adc.h>
 
 void Joystick::init() {

@@ -14,13 +14,16 @@
  For the complete text of the GNU General Public License see
  http://www.gnu.org/licenses/.
 */
-#ifndef MAIN_H
-#define MAIN_H
+#pragma once
 
-class Main {
+#include <string>
+#include <utility>
+
+#include "SDCard.h"
+
+extern  SDCard sdcard;
+
+class C64 {
 public:
-  static void setup();
-  static void loop();
+  static void run(const std::string &path);
 };
-
-#endif // MAIN_H

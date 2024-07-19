@@ -131,6 +131,9 @@ void Keyboard::init()
   keymap_[SDL_SCANCODE_RIGHTBRACKET] = std::make_pair(6, 1); // *
   keymap_[SDL_SCANCODE_APOSTROPHE] = std::make_pair(5, 6);   // @
   keymap_[SDL_SCANCODE_LGUI] = std::make_pair(7, 5);         // commodore key
+
+  debug_ = false;
+  reset_ = false;
 }
 
 void Keyboard::handleKeyDown(SDL_Keycode k)
@@ -160,9 +163,13 @@ void Keyboard::handleKeyUp(SDL_Keycode k)
 void Keyboard::handleKeyboard()
 {
   M5Cardputer.update();
-  if (M5Cardputer.BtnA.isHolding())
+  if (M5Cardputer.BtnA.wasHold())
   {
     debug_ = ~debug_;
+  }
+  if (M5Cardputer.BtnA.wasClicked())
+  {
+    reset_ = ~reset_;
   }
   std::vector<Point2D_t> keys = M5Cardputer.Keyboard.keyList();
   bool new_kb_state[KEY_SIZE] = {0};
@@ -191,5 +198,34 @@ void Keyboard::handleKeyboard()
       handleKeyUp(i);
     }
     kb_state[i] = new_kb_state[i];
+  }
+
+  if (!key_event_queue_.empty())
+  {
+    std::pair<kKeyEvent, SDL_Keycode> &ev = key_event_queue_.front();
+    key_event_queue_.pop();
+    switch (ev.first)
+    {
+    case kPress:
+      handleKeyDown(ev.second);
+      break;
+    case kRelease:
+      handleKeyUp(ev.second);
+      break;
+    }
+  }
+}
+
+void Keyboard::typeCharacter(char c)
+{
+  try
+  {
+    for (SDL_Keycode &k : charmap_.at(toupper(c)))
+      key_event_queue_.push(std::make_pair(kPress, k));
+    for (SDL_Keycode &k : charmap_.at(toupper(c)))
+      key_event_queue_.push(std::make_pair(kRelease, k));
+  }
+  catch (const std::out_of_range)
+  {
   }
 }

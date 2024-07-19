@@ -14,11 +14,10 @@
  For the complete text of the GNU General Public License see
  http://www.gnu.org/licenses/.
 */
-#include "Main.h"
+#include "C64.h"
 #include "BLEKB.h"
 #include "CPUC64.h"
 #include "Config.h"
-#include "HardwareInitializationException.h"
 #include "VIC.h"
 #include "roms/charset.h"
 #include <cstdint>
@@ -26,10 +25,11 @@
 #include "SDCard.h"
 #include "loadactions.h"
 #include "Keyboard.h"
+#include <algorithm>
+
+static const char *TAG = "C64";
 
 SDCard sdcard;
-
-static const char *TAG = "Main";
 
 uint8_t *ram;
 VIC vic;
@@ -45,7 +45,8 @@ hw_timer_t *interruptProfiling = NULL;
 hw_timer_t *interruptTOD = NULL;
 hw_timer_t *interruptSystem = NULL;
 TaskHandle_t cpuTask;
-TaskHandle_t handleKBTask;
+TaskHandle_t vicTask;
+TaskHandle_t loadTask;
 
 void IRAM_ATTR interruptProfilingFunc()
 {
@@ -159,13 +160,12 @@ void IRAM_ATTR interruptTODFunc()
 
 void IRAM_ATTR interruptSystemFunc()
 {
-  // check for keyboard inputs ca. each 8 ms
-  // checkForKeyboardCnt++;
-  // if (checkForKeyboardCnt == (8333 / Config::INTERRUPTSYSTEMRESOLUTION))
-  //{
-  //  blekb.handleKeyPress();
-  //  checkForKeyboardCnt = 0;
-  //}
+  checkForKeyboardCnt++;
+  if (checkForKeyboardCnt > 50) //(8333 / Config::INTERRUPTSYSTEMRESOLUTION))
+  {
+    keyboard.handleKeyboard();
+    checkForKeyboardCnt = 0;
+  }
 
   // throttle 6502 CPU
   throttlingCnt++;
@@ -196,20 +196,78 @@ void cpuCode(void *parameter)
   cpu.run();
 }
 
-void handleKB(void *parameter)
+void vicRefresh(void *parameter)
 {
   while (true)
   {
-    keyboard.handleKeyboard();
-    delay(20);
+    vic.refresh(cpu.refreshframecolor);
+    vTaskDelay(1);
   }
 }
 
-void Main::setup()
+void setVarTab(uint16_t addr)
 {
-  disableCore0WDT();
-  disableCore1WDT();
+  // set VARTAB
+  ram[0x2d] = addr % 256;
+  ram[0x2e] = addr / 256;
+  // clr
+  cpu.setPC(0xa52a);
+}
 
+void loadFile(void *parameter)
+{
+  vTaskDelay(3000);
+  std::string path = (const char *)parameter;
+  if (!path.empty())
+  {
+    ESP_LOGI(TAG, "load from sdcard...");
+    cpu.cpuhalted = true;
+    size_t pos = path.find_last_of('.');
+    std::string ext = path.substr(pos);
+    if (ext.compare(".bas") == 0)
+    {
+      cpu.cpuhalted = false;
+      std::string bas = sdcard.loadBas(SD_MMC, path.c_str());
+      for (char c : bas)
+      {
+        keyboard.typeCharacter(c);
+      }
+      vTaskDelete(NULL);
+      return;
+    }
+    else if (ext.compare(".prg") == 0)
+    {
+      uint8_t cury = ram[0xd6];
+      uint8_t curx = ram[0xd3];
+      uint16_t addr = sdcard.load(SD_MMC, ram + 0x0400 + cury * 40 + curx, ram);
+      if (addr == 0)
+      {
+        ESP_LOGI(TAG, "error loading file");
+      }
+      else
+      {
+        setVarTab(addr);
+        uint16_t addr = src_loadactions_prg[0] + (src_loadactions_prg[1] << 8);
+        memcpy(ram + addr, src_loadactions_prg + 2, src_loadactions_prg_len - 2);
+        cpu.exeSubroutine(addr, 1, 0, 0);
+        cpu.cpuhalted = false;
+        vTaskDelete(NULL);
+        return;
+      }
+    }
+    else
+    {
+      ESP_LOGI(TAG, "error init sdcard");
+    }
+    cpu.initMemAndRegs();
+    cpu.cpuhalted = false;
+  }
+  vTaskDelete(NULL);
+  return;
+}
+
+void C64::run(const std::string &path)
+{
   // allocate ram
   ram = new uint8_t[1 << 16];
 
@@ -230,14 +288,6 @@ void Main::setup()
                           &cpuTask, // Task handle
                           0);       // Core where the task should run
 
-  xTaskCreatePinnedToCore(handleKB,      // Function to implement the task
-                          "handleKB",    // Name of the task
-                          10000,         // Stack size in words
-                          NULL,          // Task input parameter
-                          10,            // Priority of the task
-                          &handleKBTask, // Task handle
-                          1);            // Core where the task should run
-
   // interrupt each 1000 us to get keyboard codes and throttle 6502 CPU
   interruptSystem = timerBegin(1, 80, true);
   timerAttachInterrupt(interruptSystem, &interruptSystemFunc, false);
@@ -249,10 +299,32 @@ void Main::setup()
   timerAttachInterrupt(interruptProfiling, &interruptProfilingFunc, false);
   timerAlarmWrite(interruptProfiling, 1000000, true);
   timerAlarmEnable(interruptProfiling);
-}
 
-void Main::loop()
-{
-  vic.refresh(cpu.refreshframecolor);
-  vTaskDelay(1);
+  xTaskCreatePinnedToCore(vicRefresh,   // Function to implement the task
+                          "vicRefresh", // Name of the task
+                          10000,        // Stack size in words
+                          NULL,         // Task input parameter
+                          10,           // Priority of the task
+                          &vicTask,     // Task handle
+                          1);           // Core where the task should run
+
+  xTaskCreatePinnedToCore(loadFile,             // Function to implement the task
+                          "loadFile",           // Name of the task
+                          10000,                // Stack size in words
+                          (void *)path.c_str(), // Task input parameter
+                          10,                   // Priority of the task
+                          &loadTask,            // Task handle
+                          1);                   // Core where the task should run
+
+  while (!keyboard.reset())
+  {
+    vTaskDelay(1000);
+  }
+
+  vTaskDelete(cpuTask);
+  vTaskDelete(vicTask);
+
+  timerEnd(interruptProfiling);
+  timerEnd(interruptTOD);
+  timerEnd(interruptSystem);
 }
