@@ -172,7 +172,29 @@ void Keyboard::handleKeyboard()
     joysitckMode_ = joysitckMode_ ? false : true;
   }
   std::vector<Point2D_t> keys = M5Cardputer.Keyboard.keyList();
-  if (!joysitckMode_)
+  if (joysitckMode_)
+  {
+    joystickValue = 0xff;
+    joystickFire = false;
+    // up
+    if (M5Cardputer.Keyboard.isKeyPressed(';'))
+      joystickValue &= ~(1 << C64JOYUP);
+    // left
+    if (M5Cardputer.Keyboard.isKeyPressed(','))
+      joystickValue &= ~(1 << C64JOYLEFT);
+    // down
+    if (M5Cardputer.Keyboard.isKeyPressed('.'))
+      joystickValue &= ~(1 << C64JOYDOWN);
+    // right
+    if (M5Cardputer.Keyboard.isKeyPressed('/'))
+      joystickValue &= ~(1 << C64JOYRIGHT);
+    // fire
+    if (M5Cardputer.Keyboard.isKeyPressed('a')) {
+      joystickValue &= ~(1 << C64JOYFIRE);
+      joystickFire = true;
+    }
+  }
+  else
   {
     bool new_kb_state[KEY_SIZE] = {0};
     // map key_code
@@ -231,30 +253,4 @@ void Keyboard::typeCharacter(char c)
   catch (const std::out_of_range)
   {
   }
-}
-
-uint8_t Keyboard::getJoyStickValue(bool port2, uint8_t dc00, uint8_t dc02)
-{
-  M5Cardputer.update();
-  uint8_t value = 0xff;
-  if (port2 && ((dc02 & 0x7f) == 0x7f))
-  {
-    value = 0x7f;
-  }
-  // up
-  if (M5Cardputer.Keyboard.isKeyPressed(';'))
-    value &= ~(1 << C64JOYUP);
-  // left
-  if (M5Cardputer.Keyboard.isKeyPressed(','))
-    value &= ~(1 << C64JOYLEFT);
-  // down
-  if (M5Cardputer.Keyboard.isKeyPressed('.'))
-    value &= ~(1 << C64JOYDOWN);
-  // right
-  if (M5Cardputer.Keyboard.isKeyPressed('/'))
-    value &= ~(1 << C64JOYRIGHT);
-  // fire
-  if (M5Cardputer.Keyboard.isKeyPressed('a'))
-    value &= ~(1 << C64JOYFIRE);
-  return value | (dc00 & 0x80);
 }

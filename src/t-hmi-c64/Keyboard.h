@@ -38,6 +38,9 @@ private:
   /* key events */
   std::queue<std::pair<kKeyEvent, SDL_Keycode>> key_event_queue_;
 
+  uint8_t joystickValue;
+  bool joystickFire;
+
 public:
   INLINE uint8_t keyboard_matrix_row(int col) { return keyboard_matrix_[col]; };
   INLINE bool joysitckMode() { return joysitckMode_; };
@@ -48,6 +51,15 @@ public:
   void handleKeyDown(SDL_Keycode k);
   void typeCharacter(char c);
 
-  uint8_t getJoyStickValue(bool port2, uint8_t dc00, uint8_t dc02);
-  //bool getJoyStickFire();
+  INLINE uint8_t getJoyStickValue(bool port2, uint8_t dc00, uint8_t dc02)
+  {
+    uint8_t value = joystickValue;
+    if (port2 && ((dc02 & 0x7f) == 0x7f))
+    {
+      value &= 0x7f;
+    }
+    return value | (dc00 & 0x80);
+  }
+
+  INLINE bool getJoyStickFire() { return joystickFire; };
 };

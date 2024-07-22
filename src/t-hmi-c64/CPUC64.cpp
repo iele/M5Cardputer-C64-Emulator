@@ -171,41 +171,12 @@ uint8_t CPUC64::getMem(uint16_t addr)
       }
       else if (ciaidx == 0x01)
       {
-        // if (joystickmode == 2)
-        //{
-        //   // special case: handle fire2 button -> space key
-        //   if ((cia1.ciareg[0x00] == 0x7f) && joystick.getFire2())
-        //   {
-        //     return 0xef;
-        //   }
-        // }
-        // else if (kbjoystickmode == 2)
-        //{
-        //   // special case: handle fire2 button -> space key
-        //   // todo
-        // }
-        // if (joystickmode == 1)
-        //{
-        //   // real joystick, but still check for keyboard input
-        //   // uint8_t pressedkey = blekb->decode(cia1.ciareg[0x00]);
-        //   // if (pressedkey == 0xff) {
-        //   //  // no key pressed -> return joystick value (of real joystick)
-        //   //  return joystick.getValue(false, 0, 0);
-        //   //}
-        //   // return pressedkey;
-        // }
-        // else if (kbjoystickmode == 1)
-        //{
-        //   // keyboard joystick, but still check for keyboard input
-        //   // uint8_t pressedkey = blekb->decode(cia1.ciareg[0x00]);
-        //   // if (pressedkey == 0xff) {
-        //   //  // no key pressed -> return joystick value (of keyboard joystick)
-        //   //  return blekb->getKBJoyValue(false);
-        //   //}
-        //   // return pressedkey;
-        // }
         if (keyboard->joysitckMode())
         {
+          if ((cia1.ciareg[0x00] == 0x7f) && keyboard->getJoyStickFire())
+          {
+            return 0xef;
+          }
           return keyboard->getJoyStickValue(false, 0, 0);
         }
         else

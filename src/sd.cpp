@@ -199,7 +199,6 @@ String loopSD(FS &fs)
     {
         delay(150);
         M5Cardputer.update();
-        ;
         if (redraw)
         {
             if (strcmp(PreFolder.c_str(), Folder.c_str()) != 0 || reload)
