@@ -132,7 +132,7 @@ void Keyboard::init()
   keymap_[SDL_SCANCODE_APOSTROPHE] = std::make_pair(5, 6);   // @
   keymap_[SDL_SCANCODE_LGUI] = std::make_pair(7, 5);         // commodore key
 
-  debug_ = false;
+  joysitckMode_ = false;
   reset_ = false;
 }
 
@@ -165,39 +165,42 @@ void Keyboard::handleKeyboard()
   M5Cardputer.update();
   if (M5Cardputer.BtnA.wasHold())
   {
-    debug_ = ~debug_;
+    reset_ = ~reset_;
   }
   if (M5Cardputer.BtnA.wasClicked())
   {
-    reset_ = ~reset_;
+    joysitckMode_ = joysitckMode_ ? false : true;
   }
   std::vector<Point2D_t> keys = M5Cardputer.Keyboard.keyList();
-  bool new_kb_state[KEY_SIZE] = {0};
-  // map key_code
-  for (auto &i : keys)
+  if (!joysitckMode_)
   {
-    uint8_t key_code;
-    key_code = kb_map[i.y][i.x];
-    if (key_code == 0)
+    bool new_kb_state[KEY_SIZE] = {0};
+    // map key_code
+    for (auto &i : keys)
     {
-      continue;
+      uint8_t key_code;
+      key_code = kb_map[i.y][i.x];
+      if (key_code == 0)
+      {
+        continue;
+      }
+      new_kb_state[key_code] = true;
     }
-    new_kb_state[key_code] = true;
-  }
 
-  for (int i = 0; i < KEY_SIZE; i++)
-  {
-    if (new_kb_state[i] == true && kb_state[i] == false)
+    for (int i = 0; i < KEY_SIZE; i++)
     {
-      ESP_LOGI(TAG, "key down %d", i);
-      handleKeyDown(i);
+      if (new_kb_state[i] == true && kb_state[i] == false)
+      {
+        ESP_LOGI(TAG, "key down %d", i);
+        handleKeyDown(i);
+      }
+      if (new_kb_state[i] == false && kb_state[i] == true)
+      {
+        ESP_LOGI(TAG, "key up %d", i);
+        handleKeyUp(i);
+      }
+      kb_state[i] = new_kb_state[i];
     }
-    if (new_kb_state[i] == false && kb_state[i] == true)
-    {
-      ESP_LOGI(TAG, "key up %d", i);
-      handleKeyUp(i);
-    }
-    kb_state[i] = new_kb_state[i];
   }
 
   if (!key_event_queue_.empty())
@@ -228,4 +231,30 @@ void Keyboard::typeCharacter(char c)
   catch (const std::out_of_range)
   {
   }
+}
+
+uint8_t Keyboard::getJoyStickValue(bool port2, uint8_t dc00, uint8_t dc02)
+{
+  M5Cardputer.update();
+  uint8_t value = 0xff;
+  if (port2 && ((dc02 & 0x7f) == 0x7f))
+  {
+    value = 0x7f;
+  }
+  // up
+  if (M5Cardputer.Keyboard.isKeyPressed(';'))
+    value &= ~(1 << C64JOYUP);
+  // left
+  if (M5Cardputer.Keyboard.isKeyPressed(','))
+    value &= ~(1 << C64JOYLEFT);
+  // down
+  if (M5Cardputer.Keyboard.isKeyPressed('.'))
+    value &= ~(1 << C64JOYDOWN);
+  // right
+  if (M5Cardputer.Keyboard.isKeyPressed('/'))
+    value &= ~(1 << C64JOYRIGHT);
+  // fire
+  if (M5Cardputer.Keyboard.isKeyPressed('a'))
+    value &= ~(1 << C64JOYFIRE);
+  return value | (dc00 & 0x80);
 }

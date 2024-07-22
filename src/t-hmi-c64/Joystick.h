@@ -14,28 +14,28 @@
  For the complete text of the GNU General Public License see
  http://www.gnu.org/licenses/.
 */
-#ifndef JOYSTICK_H
-#define JOYSTICK_H
-
-#include <cstdint>
-#include <driver/gpio.h>
-
-class Joystick {
-private:
-  static const uint16_t UP_THRESHOLD = 500;
-  static const uint16_t DOWN_THRESHOLD = 3500;
-  static const uint16_t LEFT_THRESHOLD = 500;
-  static const uint16_t RIGHT_THRESHOLD = 3500;
-
-public:
-  static const uint8_t C64JOYUP = 0;
-  static const uint8_t C64JOYDOWN = 1;
-  static const uint8_t C64JOYLEFT = 2;
-  static const uint8_t C64JOYRIGHT = 3;
-  static const uint8_t C64JOYFIRE = 4;
-
-  void init();
-  uint8_t getValue(bool port2, uint8_t dc00, uint8_t dc02);
-  bool getFire2();
-};
-#endif // JOYSTICK_H
+//#ifndef JOYSTICK_H
+//#define JOYSTICK_H
+//
+//#include <cstdint>
+//#include <driver/gpio.h>
+//
+//class Joystick {
+//private:
+//  static const uint16_t UP_THRESHOLD = 500;
+//  static const uint16_t DOWN_THRESHOLD = 3500;
+//  static const uint16_t LEFT_THRESHOLD = 500;
+//  static const uint16_t RIGHT_THRESHOLD = 3500;
+//
+//public:
+//  static const uint8_t C64JOYUP = 0;
+//  static const uint8_t C64JOYDOWN = 1;
+//  static const uint8_t C64JOYLEFT = 2;
+//  static const uint8_t C64JOYRIGHT = 3;
+//  static const uint8_t C64JOYFIRE = 4;
+//
+//  void init();
+//  uint8_t getValue(bool port2, uint8_t dc00, uint8_t dc02);
+//  bool getFire2();
+//};
+//#endif // JOYSTICK_H

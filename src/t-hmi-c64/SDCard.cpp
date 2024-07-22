@@ -15,38 +15,49 @@
  http://www.gnu.org/licenses/.
 */
 #include "SDCard.h"
-#include "Config.h"
 #include <esp_log.h>
 
 static const char *TAG = "SDCard";
 
+static const uint8_t PWR_EN_PIN = 12;
+static const uint8_t SD_MISO_PIN = 39;
+static const uint8_t SD_MOSI_PIN = 14;
+static const uint8_t SD_SCLK_PIN = 40;
+
 SDCard::SDCard() : initalized(false) {}
 
-bool SDCard::init() {
-  if (initalized) {
+bool SDCard::init()
+{
+  if (initalized)
+  {
     return true;
   }
   vTaskDelay(500 / portTICK_PERIOD_MS);
-  pinMode(Config::PWR_EN_PIN, OUTPUT);
-  digitalWrite(Config::PWR_EN_PIN, HIGH);
-  SD_MMC.setPins(Config::SD_SCLK_PIN, Config::SD_MOSI_PIN, Config::SD_MISO_PIN);
+  pinMode(PWR_EN_PIN, OUTPUT);
+  digitalWrite(PWR_EN_PIN, HIGH);
+  SD_MMC.setPins(SD_SCLK_PIN, SD_MOSI_PIN, SD_MISO_PIN);
   bool rlst = SD_MMC.begin("/sdcard", true);
-  if (!rlst) {
+  if (!rlst)
+  {
     return false;
   }
   initalized = true;
   return true;
 }
 
-uint16_t SDCard::load(fs::FS &fs, uint8_t *cursorpos, uint8_t *ram) {
-  if (!initalized) {
+uint16_t SDCard::load(fs::FS &fs, uint8_t *cursorpos, uint8_t *ram)
+{
+  if (!initalized)
+  {
     return 0;
   }
   cursorpos--; // char may be 160
-  while (*cursorpos == 32) {
+  while (*cursorpos == 32)
+  {
     cursorpos--;
   }
-  while (*cursorpos != 32) {
+  while (*cursorpos != 32)
+  {
     cursorpos--;
   }
   cursorpos++;
@@ -54,10 +65,14 @@ uint16_t SDCard::load(fs::FS &fs, uint8_t *cursorpos, uint8_t *ram) {
   path[0] = '/';
   uint8_t i = 1;
   uint8_t p;
-  while (((p = *cursorpos++) != 32) && (p != 160) && (i < 16)) {
-    if ((p >= 1) && (p <= 26)) {
+  while (((p = *cursorpos++) != 32) && (p != 160) && (i < 16))
+  {
+    if ((p >= 1) && (p <= 26))
+    {
       path[i] = p + 96;
-    } else if ((p >= 33) && (p <= 63)) {
+    }
+    else if ((p >= 33) && (p <= 63))
+    {
       path[i] = p;
     }
     i++;
@@ -69,23 +84,27 @@ uint16_t SDCard::load(fs::FS &fs, uint8_t *cursorpos, uint8_t *ram) {
   path[i] = '\0';
   ESP_LOGI(TAG, "load file %s", path);
   File file = fs.open(path);
-  if (!file) {
+  if (!file)
+  {
     return 0;
   }
   uint16_t chksum = 0;
   uint16_t addr = 0;
   uint8_t byte = 0;
-  if (file.available()) {
+  if (file.available())
+  {
     byte = (uint8_t)file.read();
     addr = byte;
     chksum += byte;
   }
-  if (file.available()) {
+  if (file.available())
+  {
     byte = (uint8_t)file.read();
     addr += byte << 8;
     chksum += byte;
   }
-  while (file.available()) {
+  while (file.available())
+  {
     byte = (uint8_t)file.read();
     ram[addr++] = byte;
     chksum += byte;
@@ -94,45 +113,49 @@ uint16_t SDCard::load(fs::FS &fs, uint8_t *cursorpos, uint8_t *ram) {
   return addr;
 }
 
-
-uint16_t SDCard::loadFile(fs::FS &fs, const std::string& path, uint8_t *ram) {
-  if (!initalized) {
+uint16_t SDCard::loadFile(fs::FS &fs, const std::string &path, uint8_t *ram)
+{
+  if (!initalized)
+  {
     return 0;
   }
   ESP_LOGI(TAG, "load file %s", path.c_str());
   File file = fs.open(path.c_str());
-  if (!file) {
+  if (!file)
+  {
     return 0;
   }
-  uint16_t chksum = 0;
   uint16_t addr = 0;
   uint8_t byte = 0;
-  if (file.available()) {
+  if (file.available())
+  {
     byte = (uint8_t)file.read();
     addr = byte;
-    chksum += byte;
   }
-  if (file.available()) {
+  if (file.available())
+  {
     byte = (uint8_t)file.read();
     addr += byte << 8;
-    chksum += byte;
   }
-  while (file.available()) {
+  loadAddr = addr;
+  while (file.available())
+  {
     byte = (uint8_t)file.read();
     ram[addr++] = byte;
-    chksum += byte;
   }
-  ESP_LOGI(TAG, "chksum = %d", chksum);
   return addr;
 }
 
-std::string SDCard::loadBas(fs::FS &fs, const std::string& path) {
-  if (!initalized) {
+std::string SDCard::loadBas(fs::FS &fs, const std::string &path)
+{
+  if (!initalized)
+  {
     return 0;
   }
   ESP_LOGI(TAG, "load file %s", path.c_str());
   File file = fs.open(path.c_str());
-  if (!file) {
+  if (!file)
+  {
     return 0;
   }
   String content = file.readString();

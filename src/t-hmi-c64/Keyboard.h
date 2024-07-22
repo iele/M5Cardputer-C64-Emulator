@@ -13,12 +13,18 @@
 #define SDL_SCANCODE_TO_KEYCODE(X) (X | SDLK_SCANCODE_MASK)
 typedef int32_t SDL_Keycode;
 
+static const uint8_t C64JOYUP = 0;
+static const uint8_t C64JOYDOWN = 1;
+static const uint8_t C64JOYLEFT = 2;
+static const uint8_t C64JOYRIGHT = 3;
+static const uint8_t C64JOYFIRE = 4;
+
 class Keyboard
 {
 private:
   bool kb_state[KEY_SIZE] = {0};
   uint8_t keyboard_matrix_[8];
-  std::atomic<bool> debug_;
+  std::atomic<bool> joysitckMode_;
   std::atomic<bool> reset_;
   bool retval_ = true;
   /* keyboard mappings */
@@ -34,11 +40,14 @@ private:
 
 public:
   INLINE uint8_t keyboard_matrix_row(int col) { return keyboard_matrix_[col]; };
-  INLINE bool debug() { return debug_; };
+  INLINE bool joysitckMode() { return joysitckMode_; };
   INLINE bool reset() { return reset_; };
   void init();
   void handleKeyboard();
   void handleKeyUp(SDL_Keycode k);
   void handleKeyDown(SDL_Keycode k);
   void typeCharacter(char c);
+
+  uint8_t getJoyStickValue(bool port2, uint8_t dc00, uint8_t dc02);
+  //bool getJoyStickFire();
 };

@@ -18,7 +18,9 @@
 // #include "ST7789V.h"
 #include <cstring>
 
-#define DEBUG_VIC {}// if (((uint8_t *)canvas.getBuffer())[idx] != 0 && ((uint8_t *)canvas.getBuffer())[idx] != 6) ESP_LOGI(TAG, "%d:%d", idx, ((uint8_t *)canvas.getBuffer())[idx]); }
+#define DEBUG_VIC \
+  {               \
+  } // if (((uint8_t *)canvas.getBuffer())[idx] != 0 && ((uint8_t *)canvas.getBuffer())[idx] != 6) ESP_LOGI(TAG, "%d:%d", idx, ((uint8_t *)canvas.getBuffer())[idx]); }
 
 static const char *TAG = "VIC";
 
@@ -646,10 +648,6 @@ void VIC::drawSprites(uint8_t line)
   }
 }
 
-VIC::VIC()
-{
-}
-
 void VIC::initVarsAndRegs()
 {
   for (uint8_t i = 0; i < 0x40; i++)
@@ -663,7 +661,7 @@ void VIC::initVarsAndRegs()
   vicreg[0x1a] = 0xf0;
 
   cntRefreshs = 0;
-  //syncd020 = 0;
+  // syncd020 = 0;
   vicmem = 0;
   bitmapstart = 0x2000;
   screenmemstart = 1024;
@@ -710,15 +708,15 @@ void VIC::init(uint8_t *ram, uint8_t *charrom)
   // ST7789V::init();
 }
 
-//void VIC::checkFrameColor()
+// void VIC::checkFrameColor()
 //{
-//  //uint8_t framecol = vicreg[0x20] & 15;
-//  //if (framecol != syncd020)
-//  //{
-//  //  syncd020 = framecol;
-//  //  // ST7789V::drawFrame(framecol]);
-//  //}
-//}
+//   //uint8_t framecol = vicreg[0x20] & 15;
+//   //if (framecol != syncd020)
+//   //{
+//   //  syncd020 = framecol;
+//   //  // ST7789V::drawFrame(framecol]);
+//   //}
+// }
 
 void VIC::refresh(bool refreshframecolor)
 {
@@ -727,6 +725,7 @@ void VIC::refresh(bool refreshframecolor)
   // if (refreshframecolor) {
   //   checkFrameColor();
   // }
+
   cntRefreshs++;
 }
 

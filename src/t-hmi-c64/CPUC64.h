@@ -19,7 +19,6 @@
 
 #include "CIA.h"
 #include "CPU6502.h"
-#include "Joystick.h"
 #include "Keyboard.h"
 #include "VIC.h"
 #include <cstdint>
@@ -32,7 +31,6 @@ private:
   uint8_t *kernalrom;
   uint8_t *charrom;
   Keyboard *keyboard;
-  Joystick joystick;
 
   uint8_t sidreg[0x100];
 
@@ -66,9 +64,7 @@ public:
   std::atomic<uint16_t> adjustcycles;
   std::atomic<uint16_t> measuredcycles;
 
-  // set by class ExternalCmds
-  uint8_t joystickmode;
-  uint8_t kbjoystickmode;
+  uint8_t joysitckMode;
   bool refreshframecolor;
 
   bool restorenmi;

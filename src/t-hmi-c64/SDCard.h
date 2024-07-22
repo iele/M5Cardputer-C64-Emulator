@@ -29,6 +29,8 @@ public:
   SDCard();
   bool init();
   uint16_t load(fs::FS &fs, uint8_t *petsciipath, uint8_t *ram);
+
+  uint16_t loadAddr;
   uint16_t loadFile(fs::FS &fs, const std::string& path, uint8_t *ram);
   std::string loadBas(fs::FS &fs, const std::string& path);
 };

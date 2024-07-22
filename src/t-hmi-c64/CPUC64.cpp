@@ -15,7 +15,6 @@
  http://www.gnu.org/licenses/.
 */
 #include "CPUC64.h"
-#include "BLEKB.h"
 #include "roms/basic.h"
 #include "roms/kernal.h"
 #include <esp_log.h>
@@ -158,53 +157,60 @@ uint8_t CPUC64::getMem(uint16_t addr)
       {
         // if (joystickmode == 2) {
         //   // real joystick
-        //   return joystick.getValue(true, cia1.ciareg[0x00], cia1.ciareg[0x02]);
+        if (keyboard->joysitckMode())
+        {
+          return keyboard->getJoyStickValue(true, cia1.ciareg[0x00], cia1.ciareg[0x02]);
+        }
         // } else if (kbjoystickmode == 2) {
         //   // keyboard joystick
         //   return blekb->getKBJoyValue(true) | (cia1.ciareg[0x00] & 0x80);
-        // } else {
-        return cia1.ciareg[0x00];
-        //}
+        else
+        {
+          return cia1.ciareg[0x00];
+        }
       }
       else if (ciaidx == 0x01)
       {
-        //if (joystickmode == 2)
+        // if (joystickmode == 2)
         //{
-        //  // special case: handle fire2 button -> space key
-        //  if ((cia1.ciareg[0x00] == 0x7f) && joystick.getFire2())
-        //  {
-        //    return 0xef;
-        //  }
-        //}
-        //else if (kbjoystickmode == 2)
+        //   // special case: handle fire2 button -> space key
+        //   if ((cia1.ciareg[0x00] == 0x7f) && joystick.getFire2())
+        //   {
+        //     return 0xef;
+        //   }
+        // }
+        // else if (kbjoystickmode == 2)
         //{
-        //  // special case: handle fire2 button -> space key
-        //  // todo
-        //}
-        //if (joystickmode == 1)
+        //   // special case: handle fire2 button -> space key
+        //   // todo
+        // }
+        // if (joystickmode == 1)
         //{
-        //  // real joystick, but still check for keyboard input
-        //  // uint8_t pressedkey = blekb->decode(cia1.ciareg[0x00]);
-        //  // if (pressedkey == 0xff) {
-        //  //  // no key pressed -> return joystick value (of real joystick)
-        //  //  return joystick.getValue(false, 0, 0);
-        //  //}
-        //  // return pressedkey;
-        //}
-        //else if (kbjoystickmode == 1)
+        //   // real joystick, but still check for keyboard input
+        //   // uint8_t pressedkey = blekb->decode(cia1.ciareg[0x00]);
+        //   // if (pressedkey == 0xff) {
+        //   //  // no key pressed -> return joystick value (of real joystick)
+        //   //  return joystick.getValue(false, 0, 0);
+        //   //}
+        //   // return pressedkey;
+        // }
+        // else if (kbjoystickmode == 1)
         //{
-        //  // keyboard joystick, but still check for keyboard input
-        //  // uint8_t pressedkey = blekb->decode(cia1.ciareg[0x00]);
-        //  // if (pressedkey == 0xff) {
-        //  //  // no key pressed -> return joystick value (of keyboard joystick)
-        //  //  return blekb->getKBJoyValue(false);
-        //  //}
-        //  // return pressedkey;
-        //}
-        //else
-        //{
-          // keyboard
-          // return blekb->decode(cia1.ciareg[0x00]);
+        //   // keyboard joystick, but still check for keyboard input
+        //   // uint8_t pressedkey = blekb->decode(cia1.ciareg[0x00]);
+        //   // if (pressedkey == 0xff) {
+        //   //  // no key pressed -> return joystick value (of keyboard joystick)
+        //   //  return blekb->getKBJoyValue(false);
+        //   //}
+        //   // return pressedkey;
+        // }
+        if (keyboard->joysitckMode())
+        {
+          return keyboard->getJoyStickValue(false, 0, 0);
+        }
+        else
+        {
+          //  keyboard
           if (cia1.ciareg[0x00] == 0xff)
             return 0xff;
           else if (cia1.ciareg[0x00])
@@ -215,7 +221,7 @@ uint8_t CPUC64::getMem(uint16_t addr)
               col++;
             return keyboard->keyboard_matrix_row(col);
           }
-        //}
+        }
       }
       else
       {
@@ -609,12 +615,6 @@ void CPUC64::run()
       vTaskDelay(1);
       continue;
     }
-    else if (keyboard->debug())
-    {
-      // debug (use LOGE because LOGI doesn't work here...)
-      ESP_LOGE(TAG, "pc: %2x, cmd: %s, d012: %x", pc, cmdName[getMem(pc)],
-               vic->vicreg[0x12]);
-    }
     execute(getMem(pc++));
     // 4 = average number of cycles for an instruction
     if (numofcycles >= 63 - (4 / 2) - badlinecycles)
@@ -707,8 +707,6 @@ void CPUC64::init(uint8_t *ram, uint8_t *charrom, VIC *vic, Keyboard *keyboard)
   this->keyboard = keyboard;
   measuredcycles.store(0, std::memory_order_release);
   adjustcycles.store(0, std::memory_order_release);
-  joystickmode = 0;
-  kbjoystickmode = 0;
   refreshframecolor = true;
   restorenmi = false;
   numofcycles = 0;

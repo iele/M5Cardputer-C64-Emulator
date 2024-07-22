@@ -15,9 +15,7 @@
  http://www.gnu.org/licenses/.
 */
 #include "C64.h"
-#include "BLEKB.h"
 #include "CPUC64.h"
-#include "Config.h"
 #include "VIC.h"
 #include "roms/charset.h"
 #include <cstdint>
@@ -28,6 +26,8 @@
 #include <algorithm>
 
 static const char *TAG = "C64";
+
+static const uint16_t INTERRUPTSYSTEMRESOLUTION = 1000;
 
 SDCard sdcard;
 
@@ -40,6 +40,12 @@ uint16_t checkForKeyboardCnt = 0;
 
 uint8_t throttlingCnt = 0;
 uint32_t numofburnedcyclespersecond = 0;
+
+static const uint16_t kBasicPrgStart = 0x0801;
+static const uint16_t kBasicTxtTab = 0x002b;
+static const uint16_t kBasicVarTab = 0x002d;
+static const uint16_t kBasicAryTab = 0x002f;
+static const uint16_t kBasicStrEnd = 0x0031;
 
 hw_timer_t *interruptProfiling = NULL;
 hw_timer_t *interruptTOD = NULL;
@@ -161,7 +167,7 @@ void IRAM_ATTR interruptTODFunc()
 void IRAM_ATTR interruptSystemFunc()
 {
   checkForKeyboardCnt++;
-  if (checkForKeyboardCnt > 50) //(8333 / Config::INTERRUPTSYSTEMRESOLUTION))
+  if (checkForKeyboardCnt > 50)
   {
     keyboard.handleKeyboard();
     checkForKeyboardCnt = 0;
@@ -171,10 +177,10 @@ void IRAM_ATTR interruptSystemFunc()
   throttlingCnt++;
   uint16_t measuredcyclestmp =
       cpu.measuredcycles.load(std::memory_order_acquire);
-  if (measuredcyclestmp > throttlingCnt * Config::INTERRUPTSYSTEMRESOLUTION)
+  if (measuredcyclestmp > throttlingCnt * INTERRUPTSYSTEMRESOLUTION)
   {
     uint16_t adjustcycles =
-        measuredcyclestmp - throttlingCnt * Config::INTERRUPTSYSTEMRESOLUTION;
+        measuredcyclestmp - throttlingCnt * INTERRUPTSYSTEMRESOLUTION;
     cpu.adjustcycles.store(adjustcycles, std::memory_order_release);
     numofburnedcyclespersecond += adjustcycles;
   }
@@ -205,15 +211,6 @@ void vicRefresh(void *parameter)
   }
 }
 
-void setVarTab(uint16_t addr)
-{
-  // set VARTAB
-  ram[0x2d] = addr % 256;
-  ram[0x2e] = addr / 256;
-  // clr
-  cpu.setPC(0xa52a);
-}
-
 void loadFile(void *parameter)
 {
   vTaskDelay(3000);
@@ -238,20 +235,26 @@ void loadFile(void *parameter)
     else if (ext.compare(".prg") == 0)
     {
       uint16_t addr = sdcard.loadFile(SD_MMC, path.c_str(), ram);
-      if (addr == 0)
+      if (sdcard.loadAddr == 0)
       {
         ESP_LOGI(TAG, "error loading file");
       }
+      else if (sdcard.loadAddr == kBasicPrgStart)
+      {
+        ram[kBasicTxtTab] = kBasicPrgStart;
+        ram[kBasicVarTab] = addr;
+        ram[kBasicAryTab] = addr;
+        ram[kBasicStrEnd] = addr;
+        for (char &c : std::string("RUN\n"))
+          keyboard.typeCharacter(c);
+      }
       else
       {
-        setVarTab(addr);
-        uint16_t addr = src_loadactions_prg[0] + (src_loadactions_prg[1] << 8);
-        memcpy(ram + addr, src_loadactions_prg + 2, src_loadactions_prg_len - 2);
-        cpu.exeSubroutine(addr, 1, 0, 0);
-        cpu.cpuhalted = false;
-        vTaskDelete(NULL);
-        return;
+        cpu.setPC(addr);
       }
+      cpu.cpuhalted = false;
+      vTaskDelete(NULL);
+      return;
     }
     else
     {
@@ -289,7 +292,7 @@ void C64::run(const std::string &path)
   // interrupt each 1000 us to get keyboard codes and throttle 6502 CPU
   interruptSystem = timerBegin(1, 80, true);
   timerAttachInterrupt(interruptSystem, &interruptSystemFunc, false);
-  timerAlarmWrite(interruptSystem, Config::INTERRUPTSYSTEMRESOLUTION, true);
+  timerAlarmWrite(interruptSystem, INTERRUPTSYSTEMRESOLUTION, true);
   timerAlarmEnable(interruptSystem);
 
   // // profiling: interrupt each second
@@ -322,7 +325,15 @@ void C64::run(const std::string &path)
   vTaskDelete(cpuTask);
   vTaskDelete(vicTask);
 
+  timerAlarmDisable(interruptProfiling);
+  timerAlarmDisable(interruptTOD);
+  timerAlarmDisable(interruptSystem);
+  timerDetachInterrupt(interruptProfiling);
+  timerDetachInterrupt(interruptTOD);
+  timerDetachInterrupt(interruptSystem);
   timerEnd(interruptProfiling);
   timerEnd(interruptTOD);
   timerEnd(interruptSystem);
+
+  delete ram;
 }
