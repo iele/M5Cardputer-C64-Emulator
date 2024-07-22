@@ -220,7 +220,7 @@ void loadFile(void *parameter)
   std::string path = (const char *)parameter;
   if (!path.empty())
   {
-    ESP_LOGI(TAG, "load from sdcard...");
+    ESP_LOGI(TAG, "load from sdcard... %s", path.c_str());
     cpu.cpuhalted = true;
     size_t pos = path.find_last_of('.');
     std::string ext = path.substr(pos);
@@ -237,9 +237,7 @@ void loadFile(void *parameter)
     }
     else if (ext.compare(".prg") == 0)
     {
-      uint8_t cury = ram[0xd6];
-      uint8_t curx = ram[0xd3];
-      uint16_t addr = sdcard.load(SD_MMC, ram + 0x0400 + cury * 40 + curx, ram);
+      uint16_t addr = sdcard.loadFile(SD_MMC, path.c_str(), ram);
       if (addr == 0)
       {
         ESP_LOGI(TAG, "error loading file");

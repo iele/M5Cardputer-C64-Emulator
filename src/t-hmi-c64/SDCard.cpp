@@ -99,7 +99,7 @@ uint16_t SDCard::loadFile(fs::FS &fs, const std::string& path, uint8_t *ram) {
   if (!initalized) {
     return 0;
   }
-  ESP_LOGI(TAG, "load file %s", path);
+  ESP_LOGI(TAG, "load file %s", path.c_str());
   File file = fs.open(path.c_str());
   if (!file) {
     return 0;
