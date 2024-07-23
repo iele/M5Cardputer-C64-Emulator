@@ -37,6 +37,13 @@ typedef enum code {
   CODE_POUND,  CODE_STAR,   CODE_SEMICOLON, CODE_HOME,  CODE_RSHIFT, CODE_EUQAL, CODE_CARET, CODE_SLASH,
   CODE_1,      CODE_BACK,   CODE_CTRL,      CODE_2,     CODE_SPACE,  CODE_GUI,   CODE_Q,     CODE_STOP,
 
+  //CODE_LW = 73, CODE_LA = 74, CODE_LZ = 76, CODE_LS = 77, CODE_LE = 78, 
+  //CODE_LR = 81, CODE_LD = 82, CODE_LC = 84, CODE_LF = 85, CODE_LT = 86, 
+  //CODE_LX = 87, CODE_LY = 89, CODE_LG = 90, CODE_LB = 92, CODE_LH = 93, 
+  //CODE_LU = 94, CODE_LV = 95, CODE_LI = 96, CODE_LJ = 97, CODE_LM = 98, 
+  //CODE_LK = 99, CODE_LO = 100, CODE_LN = 101, CODE_LP = 105, CODE_LL = 106, 
+  //CODE_LQ = 126,
+
   CODE_BANG = 184,            //!
   CODE_QOUTE = 187,           //"
   CODE_HASH = 136,            // #
@@ -52,7 +59,8 @@ typedef enum code {
   CODE_RIGHTCHEVRONS = 172,   //>
   CODE_QUESTION= 183,         //?
 
-  CODE_UPPER = 128,
+  CODE_LOWER = 64,
+  CODE_EXT = 128,
   CODE_INVALID = 255,
 } CODE;
 
@@ -63,15 +71,15 @@ typedef enum code {
 const CODE kb_map[4][14] = {
     {CODE_BACKQOUTE, CODE_1,      CODE_2,      CODE_3, CODE_4, CODE_5, CODE_6, CODE_7, CODE_8, CODE_9, CODE_0,     CODE_INVALID,    CODE_EUQAL,       CODE_BACK},
     {CODE_INVALID,   CODE_Q,      CODE_W,      CODE_E, CODE_R, CODE_T, CODE_Y, CODE_U, CODE_I, CODE_O, CODE_P,     CODE_LEFTBRACES, CODE_RIGHTBRACES, CODE_SLASH},
-    {CODE_GUI,       CODE_UPPER,  CODE_A,      CODE_S, CODE_D, CODE_F, CODE_G, CODE_H, CODE_J, CODE_K, CODE_L,     CODE_SEMICOLON,  CODE_BACKQOUTE,   CODE_RETURN},
+    {CODE_GUI,       CODE_EXT,  CODE_A,      CODE_S, CODE_D, CODE_F, CODE_G, CODE_H, CODE_J, CODE_K, CODE_L,     CODE_SEMICOLON,  CODE_BACKQOUTE,   CODE_RETURN},
     {CODE_CTRL,      CODE_LSHIFT, CODE_RSHIFT, CODE_Z, CODE_X, CODE_C, CODE_V, CODE_B, CODE_N, CODE_M, CODE_COMMA, CODE_PERIOD,     CODE_SLASH,       CODE_SPACE}};
 
 // when Aa pressed
 const CODE kb_map_upper[4][14] = {
     {CODE_F1, CODE_BANG,    CODE_AT,      CODE_HASH, CODE_DOLLAR, CODE_PERCENT, CODE_CARET, CODE_AND, CODE_STAR, CODE_LEFTPARENTHESES, CODE_RIGHTPARENTHESES, CODE_MINUS,         CODE_PLUS,     CODE_DELETE},
-    {CODE_F3, CODE_Q,       CODE_W,       CODE_E,    CODE_R,      CODE_T,       CODE_Y,     CODE_U,   CODE_I,    CODE_O,               CODE_P,                CODE_INVALID,       CODE_INVALID,  CODE_INVALID},
+    {CODE_F3, CODE_Q,       CODE_W,       CODE_E,    CODE_R,      CODE_T,       CODE_Y,     CODE_U,   CODE_I,    CODE_O,               CODE_P,                CODE_INVALID,       CODE_INVALID,  CODE_POUND},
     {CODE_F5, CODE_INVALID, CODE_A,       CODE_S,    CODE_D,      CODE_F,       CODE_G,     CODE_H,   CODE_J,    CODE_K,               CODE_L,                CODE_SEMICOLON,     CODE_QOUTE,    CODE_RETURN},
-    {CODE_F7, CODE_INVALID, CODE_INVALID, CODE_Z,    CODE_X,      CODE_C,       CODE_V,     CODE_B,   CODE_N,    CODE_M,               CODE_LEFTCHEVRONS,     CODE_RIGHTCHEVRONS, CODE_QUESTION, CODE_SPACE}};
+    {CODE_F7, CODE_CRSRDN, CODE_CRSRRT, CODE_Z,    CODE_X,      CODE_C,       CODE_V,     CODE_B,   CODE_N,    CODE_M,               CODE_LEFTCHEVRONS,     CODE_RIGHTCHEVRONS, CODE_QUESTION, CODE_SPACE}};
 // clang-format on
 
 static const uint8_t C64JOYUP = 0;
@@ -89,7 +97,6 @@ private:
   std::atomic<bool> reset_;
   bool retval_ = true;
   /* keyboard mappings */
-  std::unordered_map<CODE, std::pair<int, int>> keymap_;
   std::unordered_map<char, std::vector<CODE>> charmap_;
   enum kKeyEvent
   {
