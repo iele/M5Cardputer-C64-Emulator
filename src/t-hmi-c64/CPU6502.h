@@ -1,4 +1,5 @@
 /*
+ Copyright (C) 2024 iEle <melephas@gmail.com>
  Copyright (C) 2024 retroelec <retroelec42@gmail.com>
 
  This program is free software; you can redistribute it and/or modify it
@@ -14,8 +15,7 @@
  For the complete text of the GNU General Public License see
  http://www.gnu.org/licenses/.
 */
-#ifndef CPU6502_H
-#define CPU6502_H
+#pragma once
 
 #include <atomic>
 #include <cstdint>
@@ -541,5 +541,3 @@ public:
   virtual uint8_t getMem(uint16_t addr) = 0;
   virtual void setMem(uint16_t addr, uint8_t val) = 0;
 };
-
-#endif // CPU6502_H

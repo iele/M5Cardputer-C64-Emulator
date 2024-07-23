@@ -1,4 +1,5 @@
 /*
+ Copyright (C) 2024 iEle <melephas@gmail.com>
  Copyright (C) 2024 retroelec <retroelec42@gmail.com>
 
  This program is free software; you can redistribute it and/or modify it
@@ -14,8 +15,7 @@
  For the complete text of the GNU General Public License see
  http://www.gnu.org/licenses/.
 */
-#ifndef CPUC64_H
-#define CPUC64_H
+#pragma once
 
 #include "CIA.h"
 #include "CPU6502.h"
@@ -82,5 +82,3 @@ public:
   void exeSubroutine(uint16_t addr, uint8_t rega, uint8_t regx, uint8_t regy);
   void setKeycodes(uint8_t keycode1, uint8_t keycode2);
 };
-
-#endif // CPUC64_H

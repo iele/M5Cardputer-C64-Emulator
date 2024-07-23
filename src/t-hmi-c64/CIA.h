@@ -1,4 +1,5 @@
 /*
+ Copyright (C) 2024 iEle <melephas@gmail.com>
  Copyright (C) 2024 retroelec <retroelec42@gmail.com>
 
  This program is free software; you can redistribute it and/or modify it
@@ -14,8 +15,7 @@
  For the complete text of the GNU General Public License see
  http://www.gnu.org/licenses/.
 */
-#ifndef CIA_H
-#define CIA_H
+#pragma once
 
 #include <atomic>
 #include <cstdint>
@@ -25,7 +25,8 @@
 // - is an Interrupt Latch Register when read from
 // - read the clear-on-read register $dc0d will ACK all pending CIA 1 interrupts
 
-class CIA {
+class CIA
+{
 public:
   uint8_t ciareg[0x10];
 
@@ -58,4 +59,3 @@ public:
   bool checkTimerA(uint8_t deltaT);
   bool checkTimerB(uint8_t deltaT);
 };
-#endif // CIA_H

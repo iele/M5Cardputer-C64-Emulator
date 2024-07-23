@@ -1,4 +1,5 @@
 /*
+ Copyright (C) 2024 iEle <melephas@gmail.com>
  Copyright (C) 2024 retroelec <retroelec42@gmail.com>
 
  This program is free software; you can redistribute it and/or modify it
@@ -14,8 +15,7 @@
  For the complete text of the GNU General Public License see
  http://www.gnu.org/licenses/.
 */
-#ifndef VIC_H
-#define VIC_H
+#pragma once
 
 #include <cstdint>
 #include <M5Cardputer.h>
@@ -115,4 +115,3 @@ public:
     uint8_t nextRasterline();
     void drawRasterline();
 };
-#endif // VIC_H

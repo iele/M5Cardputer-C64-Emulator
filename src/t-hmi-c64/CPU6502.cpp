@@ -1,4 +1,5 @@
 /*
+ Copyright (C) 2024 iEle <melephas@gmail.com>
  Copyright (C) 2024 retroelec <retroelec42@gmail.com>
 
  This program is free software; you can redistribute it and/or modify it
@@ -20,42 +21,49 @@
 
 static const char *TAG = "CPUC6502";
 
-void CPU6502::modeZeropage() {
+void CPU6502::modeZeropage()
+{
   zl = getMem(pc++);
   z = zl;
 }
 
-void CPU6502::modeZeropageX() {
+void CPU6502::modeZeropageX()
+{
   zl = getMem(pc++);
   zl += x;
   z = zl;
 }
 
-void CPU6502::modeZeropageY() {
+void CPU6502::modeZeropageY()
+{
   zl = getMem(pc++);
   zl += y;
   z = zl;
 }
 
-void CPU6502::modeAbsolute() {
+void CPU6502::modeAbsolute()
+{
   zl = getMem(pc++);
   zh = getMem(pc++);
   z = (zl + (zh << 8));
 }
 
-void CPU6502::modeAbsoluteX() {
+void CPU6502::modeAbsoluteX()
+{
   zl = getMem(pc++);
   zh = getMem(pc++);
   z = (x + zl + (zh << 8));
 }
 
-void CPU6502::modeAbsoluteY() {
+void CPU6502::modeAbsoluteY()
+{
   zl = getMem(pc++);
   zh = getMem(pc++);
   z = (y + zl + (zh << 8));
 }
 
-void CPU6502::modeIndirectX() {
+void CPU6502::modeIndirectX()
+{
   uint8_t ql = getMem(pc++);
   ql += x;
   zl = getMem(ql++);
@@ -63,14 +71,16 @@ void CPU6502::modeIndirectX() {
   z = (zl + (zh << 8));
 }
 
-void CPU6502::modeIndirectY() {
+void CPU6502::modeIndirectY()
+{
   uint16_t q = getMem(pc++);
   zl = getMem(q++);
   zh = getMem(q);
   z = (y + zl + (zh << 8));
 }
 
-void CPU6502::setNZ(uint8_t r) {
+void CPU6502::setNZ(uint8_t r)
+{
   zflag = !r;
   nflag = r & 0x80;
 }
@@ -81,10 +91,13 @@ void CPU6502::xtestandsetNZ() { setNZ(x); }
 
 void CPU6502::ytestandsetNZ() { setNZ(y); }
 
-void CPU6502::adcbase(uint8_t r) {
-  if (!dflag) {
+void CPU6502::adcbase(uint8_t r)
+{
+  if (!dflag)
+  {
     uint16_t a1 = a + r;
-    if (cflag) {
+    if (cflag)
+    {
       a1++;
     }
     uint8_t a2 = a1;
@@ -93,82 +106,100 @@ void CPU6502::adcbase(uint8_t r) {
     zflag = !a2;
     nflag = a2 & 0x80;
     a = a2;
-  } else {
+  }
+  else
+  {
     uint16_t a2 = a + r;
     uint8_t al = (a & 0x0F) + (r & 0x0F);
-    if (cflag) {
+    if (cflag)
+    {
       al++;
       a2++;
     }
     zflag = !(a2 & 0xff);
-    if (al >= 0x0A) {
+    if (al >= 0x0A)
+    {
       al = ((al + 0x06) & 0x0F) + 0x10;
     }
     uint16_t a1 = (a & 0xF0) + (r & 0xF0) + al;
     vflag = (a ^ a1) & (r ^ a1) & 0x80;
     nflag = a1 & 0x80;
     cflag = (a1 >= 0xA0);
-    if (a1 >= 0xA0) {
+    if (a1 >= 0xA0)
+    {
       a1 += 0x60;
     }
     a = a1;
   }
 }
 
-void CPU6502::sbcbase(uint8_t r1) {
-  if (!dflag) {
+void CPU6502::sbcbase(uint8_t r1)
+{
+  if (!dflag)
+  {
     adcbase(~r1);
-  } else {
+  }
+  else
+  {
     uint8_t r = ~r1;
     uint16_t a2 = a + r;
     uint8_t al = (a & 0x0F) + (r & 0x0F);
-    if (cflag) {
+    if (cflag)
+    {
       al++;
       a2++;
     }
     zflag = !(a2 & 0xff);
-    if (al < 0x10) {
+    if (al < 0x10)
+    {
       al = ((al + 0x0a) & 0x0F);
     }
     uint16_t a1 = (a & 0xF0) + (r & 0xF0) + al;
     vflag = (a ^ a1) & (r ^ a1) & 0x80;
     nflag = a1 & 0x80;
     cflag = a1 >> 8;
-    if (a1 < 0x100) {
+    if (a1 < 0x100)
+    {
       a1 += 0xA0;
     }
     a = a1;
   }
 }
 
-void CPU6502::incbase() {
+void CPU6502::incbase()
+{
   uint8_t r = getMem(z);
   r++;
   setMem(z, r);
   setNZ(r);
 }
 
-void CPU6502::decbase() {
+void CPU6502::decbase()
+{
   uint8_t r = getMem(z);
   r--;
   setMem(z, r);
   setNZ(r);
 }
 
-void CPU6502::cmpbase(uint8_t r1, uint8_t r2) {
+void CPU6502::cmpbase(uint8_t r1, uint8_t r2)
+{
   int16_t r = r1 - r2;
   cflag = true;
-  if (r < 0) {
+  if (r < 0)
+  {
     r += 0x100;
     cflag = false;
   }
   setNZ(r);
 }
 
-uint8_t CPU6502::aslbase0(uint8_t r) {
+uint8_t CPU6502::aslbase0(uint8_t r)
+{
   uint16_t r1 = r << 1;
   cflag = false;
-  if (r1 & 0x100) {
+  if (r1 & 0x100)
+  {
     cflag = true;
     r1 &= 0xFF;
   }
@@ -176,32 +207,38 @@ uint8_t CPU6502::aslbase0(uint8_t r) {
   return r1;
 }
 
-void CPU6502::aslbase() {
+void CPU6502::aslbase()
+{
   uint8_t r = getMem(z);
   r = aslbase0(r);
   setMem(z, r);
 }
 
-uint8_t CPU6502::lsrbase0(uint8_t r) {
+uint8_t CPU6502::lsrbase0(uint8_t r)
+{
   cflag = r & 0x01;
   r >>= 1;
   setNZ(r);
   return r;
 }
 
-void CPU6502::lsrbase() {
+void CPU6502::lsrbase()
+{
   uint8_t r = getMem(z);
   r = lsrbase0(r);
   setMem(z, r);
 }
 
-uint8_t CPU6502::rolbase0(uint8_t r) {
+uint8_t CPU6502::rolbase0(uint8_t r)
+{
   uint16_t r1 = r << 1;
-  if (cflag) {
+  if (cflag)
+  {
     r1 |= 1;
   }
   cflag = false;
-  if (r1 & 0x100) {
+  if (r1 & 0x100)
+  {
     cflag = true;
     r1 &= 0xFF;
   }
@@ -209,15 +246,18 @@ uint8_t CPU6502::rolbase0(uint8_t r) {
   return r1;
 }
 
-void CPU6502::rolbase() {
+void CPU6502::rolbase()
+{
   uint8_t r = getMem(z);
   r = rolbase0(r);
   setMem(z, r);
 }
 
-uint8_t CPU6502::rorbase0(uint8_t r) {
+uint8_t CPU6502::rorbase0(uint8_t r)
+{
   uint16_t r1 = r;
-  if (cflag) {
+  if (cflag)
+  {
     r1 |= 0x100;
   }
   cflag = r1 & 0x01;
@@ -226,13 +266,15 @@ uint8_t CPU6502::rorbase0(uint8_t r) {
   return r1;
 }
 
-void CPU6502::rorbase() {
+void CPU6502::rorbase()
+{
   uint8_t r = getMem(z);
   r = rorbase0(r);
   setMem(z, r);
 }
 
-void CPU6502::bitBase() {
+void CPU6502::bitBase()
+{
   uint8_t r = getMem(z);
   nflag = r & 128;
   vflag = r & 64;
@@ -240,7 +282,8 @@ void CPU6502::bitBase() {
   zflag = r == 0;
 }
 
-void CPU6502::srfromflags() {
+void CPU6502::srfromflags()
+{
   sr = 32;
   if (cflag)
     sr |= 1;
@@ -258,7 +301,8 @@ void CPU6502::srfromflags() {
     sr |= 128;
 }
 
-void CPU6502::flagsfromsr() {
+void CPU6502::flagsfromsr()
+{
   cflag = sr & 1;
   zflag = sr & 2;
   iflag = sr & 4;
@@ -268,13 +312,15 @@ void CPU6502::flagsfromsr() {
   nflag = sr & 128;
 }
 
-void CPU6502::pushtostack(uint8_t r) {
+void CPU6502::pushtostack(uint8_t r)
+{
   uint16_t z1 = sp + 0x100;
   setMem(z1, r);
   sp--;
 }
 
-uint8_t CPU6502::pullfromstack() {
+uint8_t CPU6502::pullfromstack()
+{
   sp++;
   uint16_t z1 = sp + 0x100;
   return getMem(z1);
@@ -282,13 +328,15 @@ uint8_t CPU6502::pullfromstack() {
 
 void CPU6502::cmd6502illegal() { cpuhalted = false; }
 
-void CPU6502::cmd6502brk() {
+void CPU6502::cmd6502brk()
+{
   pc++;
   setPCToIntVec(getMem(0xfffe) + (getMem(0xffff) << 8), true);
   numofcycles += 7;
 }
 
-void CPU6502::cmd6502oraIndirectX() {
+void CPU6502::cmd6502oraIndirectX()
+{
   modeIndirectX();
   uint8_t r = getMem(z);
   a |= r;
@@ -296,7 +344,8 @@ void CPU6502::cmd6502oraIndirectX() {
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502oraZeropage() {
+void CPU6502::cmd6502oraZeropage()
+{
   modeZeropage();
   uint8_t r = getMem(z);
   a |= r;
@@ -304,35 +353,41 @@ void CPU6502::cmd6502oraZeropage() {
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502aslZeropage() {
+void CPU6502::cmd6502aslZeropage()
+{
   modeZeropage();
   aslbase();
   numofcycles += 5;
 }
 
-void CPU6502::php() {
+void CPU6502::php()
+{
   srfromflags();
   pushtostack(sr);
 }
 
-void CPU6502::cmd6502php() {
+void CPU6502::cmd6502php()
+{
   bflag = true;
   php();
 }
 
-void CPU6502::cmd6502oraImmediate() {
+void CPU6502::cmd6502oraImmediate()
+{
   uint8_t r = getMem(pc++);
   a |= r;
   atestandsetNZ();
   numofcycles += 3;
 }
 
-void CPU6502::cmd6502aslA() {
+void CPU6502::cmd6502aslA()
+{
   a = aslbase0(a);
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502oraAbsolute() {
+void CPU6502::cmd6502oraAbsolute()
+{
   modeAbsolute();
   uint8_t r = getMem(z);
   a |= r;
@@ -340,22 +395,26 @@ void CPU6502::cmd6502oraAbsolute() {
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502aslAbsolute() {
+void CPU6502::cmd6502aslAbsolute()
+{
   modeAbsolute();
   aslbase();
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502bpl() {
+void CPU6502::cmd6502bpl()
+{
   int8_t r = getMem(pc++);
-  if (!nflag) {
+  if (!nflag)
+  {
     pc += r;
     numofcycles++;
   }
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502oraIndirectY() {
+void CPU6502::cmd6502oraIndirectY()
+{
   modeIndirectY();
   uint8_t r = getMem(z);
   a |= r;
@@ -363,7 +422,8 @@ void CPU6502::cmd6502oraIndirectY() {
   numofcycles += 5;
 }
 
-void CPU6502::cmd6502oraZeropageX() {
+void CPU6502::cmd6502oraZeropageX()
+{
   modeZeropageX();
   uint8_t r = getMem(z);
   a |= r;
@@ -371,18 +431,21 @@ void CPU6502::cmd6502oraZeropageX() {
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502aslZeropageX() {
+void CPU6502::cmd6502aslZeropageX()
+{
   modeZeropageX();
   aslbase();
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502clc() {
+void CPU6502::cmd6502clc()
+{
   cflag = false;
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502oraAbsoluteY() {
+void CPU6502::cmd6502oraAbsoluteY()
+{
   modeAbsoluteY();
   uint8_t r = getMem(z);
   a |= r;
@@ -390,7 +453,8 @@ void CPU6502::cmd6502oraAbsoluteY() {
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502oraAbsoluteX() {
+void CPU6502::cmd6502oraAbsoluteX()
+{
   modeAbsoluteX();
   uint8_t r = getMem(z);
   a |= r;
@@ -398,13 +462,15 @@ void CPU6502::cmd6502oraAbsoluteX() {
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502aslAbsoluteX() {
+void CPU6502::cmd6502aslAbsoluteX()
+{
   modeAbsoluteX();
   aslbase();
   numofcycles += 7;
 }
 
-void CPU6502::cmd6502jsr() {
+void CPU6502::cmd6502jsr()
+{
   // Zieladresse
   uint8_t ql = getMem(pc++);
   uint8_t qh = getMem(pc);
@@ -419,7 +485,8 @@ void CPU6502::cmd6502jsr() {
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502andIndirectX() {
+void CPU6502::cmd6502andIndirectX()
+{
   modeIndirectX();
   uint8_t r = getMem(z);
   a &= r;
@@ -427,13 +494,15 @@ void CPU6502::cmd6502andIndirectX() {
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502bitZeropage() {
+void CPU6502::cmd6502bitZeropage()
+{
   modeZeropage();
   bitBase();
   numofcycles += 3;
 }
 
-void CPU6502::cmd6502andZeropage() {
+void CPU6502::cmd6502andZeropage()
+{
   modeZeropage();
   uint8_t r = getMem(z);
   a &= r;
@@ -441,30 +510,35 @@ void CPU6502::cmd6502andZeropage() {
   numofcycles += 3;
 }
 
-void CPU6502::cmd6502rolZeropage() {
+void CPU6502::cmd6502rolZeropage()
+{
   modeZeropage();
   rolbase();
   numofcycles += 5;
 }
 
-void CPU6502::plp() {
+void CPU6502::plp()
+{
   sr = pullfromstack();
   flagsfromsr();
 }
 
-void CPU6502::cmd6502plp() {
+void CPU6502::cmd6502plp()
+{
   plp();
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502andImmediate() {
+void CPU6502::cmd6502andImmediate()
+{
   uint8_t r = getMem(pc++);
   a &= r;
   atestandsetNZ();
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502ancImmediate() {
+void CPU6502::cmd6502ancImmediate()
+{
   uint8_t r = getMem(pc++);
   a &= r;
   atestandsetNZ();
@@ -472,18 +546,21 @@ void CPU6502::cmd6502ancImmediate() {
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502rolA() {
+void CPU6502::cmd6502rolA()
+{
   a = rolbase0(a);
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502bitAbsolute() {
+void CPU6502::cmd6502bitAbsolute()
+{
   modeAbsolute();
   bitBase();
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502andAbsolute() {
+void CPU6502::cmd6502andAbsolute()
+{
   modeAbsolute();
   uint8_t r = getMem(z);
   a &= r;
@@ -491,22 +568,26 @@ void CPU6502::cmd6502andAbsolute() {
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502rolAbsolute() {
+void CPU6502::cmd6502rolAbsolute()
+{
   modeAbsolute();
   rolbase();
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502bmi() {
+void CPU6502::cmd6502bmi()
+{
   int8_t r = getMem(pc++);
-  if (nflag) {
+  if (nflag)
+  {
     pc += r;
     numofcycles++;
   }
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502andIndirectY() {
+void CPU6502::cmd6502andIndirectY()
+{
   modeIndirectY();
   uint8_t r = getMem(z);
   a &= r;
@@ -514,7 +595,8 @@ void CPU6502::cmd6502andIndirectY() {
   numofcycles += 5;
 }
 
-void CPU6502::cmd6502andZeropageX() {
+void CPU6502::cmd6502andZeropageX()
+{
   modeZeropageX();
   uint8_t r = getMem(z);
   a &= r;
@@ -522,18 +604,21 @@ void CPU6502::cmd6502andZeropageX() {
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502rolZeropageX() {
+void CPU6502::cmd6502rolZeropageX()
+{
   modeZeropageX();
   rolbase();
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502sec() {
+void CPU6502::cmd6502sec()
+{
   cflag = true;
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502andAbsoluteY() {
+void CPU6502::cmd6502andAbsoluteY()
+{
   modeAbsoluteY();
   uint8_t r = getMem(z);
   a &= r;
@@ -541,7 +626,8 @@ void CPU6502::cmd6502andAbsoluteY() {
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502andAbsoluteX() {
+void CPU6502::cmd6502andAbsoluteX()
+{
   modeAbsoluteX();
   uint8_t r = getMem(z);
   a &= r;
@@ -549,13 +635,15 @@ void CPU6502::cmd6502andAbsoluteX() {
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502rolAbsoluteX() {
+void CPU6502::cmd6502rolAbsoluteX()
+{
   modeAbsoluteX();
   rolbase();
   numofcycles += 7;
 }
 
-void CPU6502::cmd6502rti() {
+void CPU6502::cmd6502rti()
+{
   // get status register from stack
   plp();
   // get return address from stack
@@ -565,7 +653,8 @@ void CPU6502::cmd6502rti() {
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502eorIndirectX() {
+void CPU6502::cmd6502eorIndirectX()
+{
   modeIndirectX();
   uint8_t r = getMem(z);
   a ^= r;
@@ -573,7 +662,8 @@ void CPU6502::cmd6502eorIndirectX() {
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502eorZeropage() {
+void CPU6502::cmd6502eorZeropage()
+{
   modeZeropage();
   uint8_t r = getMem(z);
   a ^= r;
@@ -581,36 +671,42 @@ void CPU6502::cmd6502eorZeropage() {
   numofcycles += 3;
 }
 
-void CPU6502::cmd6502lsrZeropage() {
+void CPU6502::cmd6502lsrZeropage()
+{
   modeZeropage();
   lsrbase();
   numofcycles += 5;
 }
 
-void CPU6502::cmd6502pha() {
+void CPU6502::cmd6502pha()
+{
   pushtostack(a);
   numofcycles += 3;
 }
 
-void CPU6502::cmd6502eorImmediate() {
+void CPU6502::cmd6502eorImmediate()
+{
   uint8_t r = getMem(pc++);
   a ^= r;
   atestandsetNZ();
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502lsrA() {
+void CPU6502::cmd6502lsrA()
+{
   a = lsrbase0(a);
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502jmpAbsolute() {
+void CPU6502::cmd6502jmpAbsolute()
+{
   modeAbsolute();
   pc = z;
   numofcycles += 3;
 }
 
-void CPU6502::cmd6502eorAbsolute() {
+void CPU6502::cmd6502eorAbsolute()
+{
   modeAbsolute();
   uint8_t r = getMem(z);
   a ^= r;
@@ -618,22 +714,26 @@ void CPU6502::cmd6502eorAbsolute() {
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502lsrAbsolute() {
+void CPU6502::cmd6502lsrAbsolute()
+{
   modeAbsolute();
   lsrbase();
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502bvc() {
+void CPU6502::cmd6502bvc()
+{
   int8_t r = getMem(pc++);
-  if (!vflag) {
+  if (!vflag)
+  {
     pc += r;
     numofcycles++;
   }
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502eorIndirectY() {
+void CPU6502::cmd6502eorIndirectY()
+{
   modeIndirectY();
   uint8_t r = getMem(z);
   a ^= r;
@@ -641,7 +741,8 @@ void CPU6502::cmd6502eorIndirectY() {
   numofcycles += 5;
 }
 
-void CPU6502::cmd6502eorZeropageX() {
+void CPU6502::cmd6502eorZeropageX()
+{
   modeZeropageX();
   uint8_t r = getMem(z);
   a ^= r;
@@ -649,18 +750,21 @@ void CPU6502::cmd6502eorZeropageX() {
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502lsrZeropageX() {
+void CPU6502::cmd6502lsrZeropageX()
+{
   modeZeropageX();
   lsrbase();
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502cli() {
+void CPU6502::cmd6502cli()
+{
   iflag = false;
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502eorAbsoluteY() {
+void CPU6502::cmd6502eorAbsoluteY()
+{
   modeAbsoluteY();
   uint8_t r = getMem(z);
   a ^= r;
@@ -668,7 +772,8 @@ void CPU6502::cmd6502eorAbsoluteY() {
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502eorAbsoluteX() {
+void CPU6502::cmd6502eorAbsoluteX()
+{
   modeAbsoluteX();
   uint8_t r = getMem(z);
   a ^= r;
@@ -676,57 +781,66 @@ void CPU6502::cmd6502eorAbsoluteX() {
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502lsrAbsoluteX() {
+void CPU6502::cmd6502lsrAbsoluteX()
+{
   modeAbsoluteX();
   lsrbase();
   numofcycles += 7;
 }
 
-void CPU6502::cmd6502rts() {
+void CPU6502::cmd6502rts()
+{
   uint8_t pcl = pullfromstack();
   uint8_t pch = pullfromstack();
   pc = (pcl + 1 + (pch << 8));
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502adcIndirectX() {
+void CPU6502::cmd6502adcIndirectX()
+{
   modeIndirectX();
   uint8_t r = getMem(z);
   adcbase(r);
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502adcZeropage() {
+void CPU6502::cmd6502adcZeropage()
+{
   modeZeropage();
   uint8_t r = getMem(z);
   adcbase(r);
   numofcycles += 3;
 }
 
-void CPU6502::cmd6502rorZeropage() {
+void CPU6502::cmd6502rorZeropage()
+{
   modeZeropage();
   rorbase();
   numofcycles += 5;
 }
 
-void CPU6502::cmd6502pla() {
+void CPU6502::cmd6502pla()
+{
   a = pullfromstack();
   atestandsetNZ();
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502adcImmediate() {
+void CPU6502::cmd6502adcImmediate()
+{
   uint8_t r = getMem(pc++);
   adcbase(r);
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502rorA() {
+void CPU6502::cmd6502rorA()
+{
   a = rorbase0(a);
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502jmpIndirect() {
+void CPU6502::cmd6502jmpIndirect()
+{
   modeAbsolute();
   uint8_t r1 = getMem(z);
   zl++;
@@ -736,197 +850,230 @@ void CPU6502::cmd6502jmpIndirect() {
   numofcycles += 5;
 }
 
-void CPU6502::cmd6502adcAbsolute() {
+void CPU6502::cmd6502adcAbsolute()
+{
   modeAbsolute();
   uint8_t r = getMem(z);
   adcbase(r);
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502rorAbsolute() {
+void CPU6502::cmd6502rorAbsolute()
+{
   modeAbsolute();
   rorbase();
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502bvs() {
+void CPU6502::cmd6502bvs()
+{
   int8_t r = getMem(pc++);
-  if (vflag) {
+  if (vflag)
+  {
     pc += r;
     numofcycles++;
   }
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502adcIndirectY() {
+void CPU6502::cmd6502adcIndirectY()
+{
   modeIndirectY();
   uint8_t r = getMem(z);
   adcbase(r);
   numofcycles += 5;
 }
 
-void CPU6502::cmd6502adcZeropageX() {
+void CPU6502::cmd6502adcZeropageX()
+{
   modeZeropageX();
   uint8_t r = getMem(z);
   adcbase(r);
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502rorZeropageX() {
+void CPU6502::cmd6502rorZeropageX()
+{
   modeZeropageX();
   rorbase();
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502sei() {
+void CPU6502::cmd6502sei()
+{
   iflag = true;
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502adcAbsoluteY() {
+void CPU6502::cmd6502adcAbsoluteY()
+{
   modeAbsoluteY();
   uint8_t r = getMem(z);
   adcbase(r);
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502adcAbsoluteX() {
+void CPU6502::cmd6502adcAbsoluteX()
+{
   modeAbsoluteX();
   uint8_t r = getMem(z);
   adcbase(r);
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502rorAbsoluteX() {
+void CPU6502::cmd6502rorAbsoluteX()
+{
   modeAbsoluteX();
   rorbase();
   numofcycles += 7;
 }
 
-void CPU6502::cmd6502staIndirectX() {
+void CPU6502::cmd6502staIndirectX()
+{
   modeIndirectX();
   setMem(z, a);
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502styZeropage() {
+void CPU6502::cmd6502styZeropage()
+{
   modeZeropage();
   setMem(z, y);
   numofcycles += 3;
 }
 
-void CPU6502::cmd6502staZeropage() {
+void CPU6502::cmd6502staZeropage()
+{
   modeZeropage();
   setMem(z, a);
   numofcycles += 3;
 }
 
-void CPU6502::cmd6502stxZeropage() {
+void CPU6502::cmd6502stxZeropage()
+{
   modeZeropage();
   setMem(z, x);
   numofcycles += 3;
 }
 
-void CPU6502::cmd6502dey() {
+void CPU6502::cmd6502dey()
+{
   y--;
   setNZ(y);
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502txa() {
+void CPU6502::cmd6502txa()
+{
   a = x;
   atestandsetNZ();
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502styAbsolute() {
+void CPU6502::cmd6502styAbsolute()
+{
   modeAbsolute();
   setMem(z, y);
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502staAbsolute() {
+void CPU6502::cmd6502staAbsolute()
+{
   modeAbsolute();
   setMem(z, a);
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502stxAbsolute() {
+void CPU6502::cmd6502stxAbsolute()
+{
   modeAbsolute();
   setMem(z, x);
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502bcc() {
+void CPU6502::cmd6502bcc()
+{
   int8_t r = getMem(pc++);
-  if (!cflag) {
+  if (!cflag)
+  {
     pc += r;
     numofcycles++;
   }
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502staIndirectY() {
+void CPU6502::cmd6502staIndirectY()
+{
   modeIndirectY();
   setMem(z, a);
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502styZeropageX() {
+void CPU6502::cmd6502styZeropageX()
+{
   modeZeropageX();
   setMem(z, y);
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502staZeropageX() {
+void CPU6502::cmd6502staZeropageX()
+{
   modeZeropageX();
   setMem(z, a);
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502stxZeropageY() {
+void CPU6502::cmd6502stxZeropageY()
+{
   modeZeropageY();
   setMem(z, x);
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502tya() {
+void CPU6502::cmd6502tya()
+{
   a = y;
   atestandsetNZ();
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502staAbsoluteY() {
+void CPU6502::cmd6502staAbsoluteY()
+{
   modeAbsoluteY();
   setMem(z, a);
   numofcycles += 5;
 }
 
-void CPU6502::cmd6502txs() {
+void CPU6502::cmd6502txs()
+{
   sp = x;
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502staAbsoluteX() {
+void CPU6502::cmd6502staAbsoluteX()
+{
   modeAbsoluteX();
   setMem(z, a);
   numofcycles += 5;
 }
 
-void CPU6502::cmd6502ldyImmediate() {
+void CPU6502::cmd6502ldyImmediate()
+{
   y = getMem(pc++);
   ytestandsetNZ();
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502ldaIndirectX() {
+void CPU6502::cmd6502ldaIndirectX()
+{
   modeIndirectX();
   a = getMem(z);
   atestandsetNZ();
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502laxIndirectX() {
+void CPU6502::cmd6502laxIndirectX()
+{
   modeIndirectX();
   a = getMem(z);
   x = a;
@@ -934,27 +1081,31 @@ void CPU6502::cmd6502laxIndirectX() {
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502ldxImmediate() {
+void CPU6502::cmd6502ldxImmediate()
+{
   x = getMem(pc++);
   xtestandsetNZ();
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502ldyZeropage() {
+void CPU6502::cmd6502ldyZeropage()
+{
   modeZeropage();
   y = getMem(z);
   ytestandsetNZ();
   numofcycles += 3;
 }
 
-void CPU6502::cmd6502ldaZeropage() {
+void CPU6502::cmd6502ldaZeropage()
+{
   modeZeropage();
   a = getMem(z);
   atestandsetNZ();
   numofcycles += 3;
 }
 
-void CPU6502::cmd6502laxZeropage() {
+void CPU6502::cmd6502laxZeropage()
+{
   modeZeropage();
   a = getMem(z);
   x = a;
@@ -962,53 +1113,61 @@ void CPU6502::cmd6502laxZeropage() {
   numofcycles += 3;
 }
 
-void CPU6502::cmd6502lxaImmediate() {
+void CPU6502::cmd6502lxaImmediate()
+{
   a = getMem(pc++);
   x = a;
   atestandsetNZ();
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502ldxZeropage() {
+void CPU6502::cmd6502ldxZeropage()
+{
   modeZeropage();
   x = getMem(z);
   xtestandsetNZ();
   numofcycles += 3;
 }
 
-void CPU6502::cmd6502tay() {
+void CPU6502::cmd6502tay()
+{
   y = a;
   ytestandsetNZ();
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502ldaImmediate() {
+void CPU6502::cmd6502ldaImmediate()
+{
   a = getMem(pc++);
   atestandsetNZ();
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502tax() {
+void CPU6502::cmd6502tax()
+{
   x = a;
   xtestandsetNZ();
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502ldyAbsolute() {
+void CPU6502::cmd6502ldyAbsolute()
+{
   modeAbsolute();
   y = getMem(z);
   ytestandsetNZ();
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502ldaAbsolute() {
+void CPU6502::cmd6502ldaAbsolute()
+{
   modeAbsolute();
   a = getMem(z);
   atestandsetNZ();
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502laxAbsolute() {
+void CPU6502::cmd6502laxAbsolute()
+{
   modeAbsolute();
   a = getMem(z);
   x = a;
@@ -1016,30 +1175,35 @@ void CPU6502::cmd6502laxAbsolute() {
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502ldxAbsolute() {
+void CPU6502::cmd6502ldxAbsolute()
+{
   modeAbsolute();
   x = getMem(z);
   xtestandsetNZ();
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502bcs() {
+void CPU6502::cmd6502bcs()
+{
   int8_t r = getMem(pc++);
-  if (cflag) {
+  if (cflag)
+  {
     pc += r;
     numofcycles++;
   }
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502ldaIndirectY() {
+void CPU6502::cmd6502ldaIndirectY()
+{
   modeIndirectY();
   a = getMem(z);
   atestandsetNZ();
   numofcycles += 5;
 }
 
-void CPU6502::cmd6502laxIndirectY() {
+void CPU6502::cmd6502laxIndirectY()
+{
   modeIndirectY();
   a = getMem(z);
   x = a;
@@ -1047,21 +1211,24 @@ void CPU6502::cmd6502laxIndirectY() {
   numofcycles += 5;
 }
 
-void CPU6502::cmd6502ldyZeropageX() {
+void CPU6502::cmd6502ldyZeropageX()
+{
   modeZeropageX();
   y = getMem(z);
   ytestandsetNZ();
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502ldaZeropageX() {
+void CPU6502::cmd6502ldaZeropageX()
+{
   modeZeropageX();
   a = getMem(z);
   atestandsetNZ();
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502laxZeropageY() {
+void CPU6502::cmd6502laxZeropageY()
+{
   modeZeropageX();
   a = getMem(z);
   x = a;
@@ -1069,26 +1236,30 @@ void CPU6502::cmd6502laxZeropageY() {
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502ldxZeropageY() {
+void CPU6502::cmd6502ldxZeropageY()
+{
   modeZeropageY();
   x = getMem(z);
   xtestandsetNZ();
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502clv() {
+void CPU6502::cmd6502clv()
+{
   vflag = false;
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502ldaAbsoluteY() {
+void CPU6502::cmd6502ldaAbsoluteY()
+{
   modeAbsoluteY();
   a = getMem(z);
   atestandsetNZ();
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502laxAbsoluteY() {
+void CPU6502::cmd6502laxAbsoluteY()
+{
   modeAbsoluteY();
   a = getMem(z);
   x = a;
@@ -1096,198 +1267,229 @@ void CPU6502::cmd6502laxAbsoluteY() {
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502tsx() {
+void CPU6502::cmd6502tsx()
+{
   x = sp;
   xtestandsetNZ();
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502ldyAbsoluteX() {
+void CPU6502::cmd6502ldyAbsoluteX()
+{
   modeAbsoluteX();
   y = getMem(z);
   ytestandsetNZ();
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502ldaAbsoluteX() {
+void CPU6502::cmd6502ldaAbsoluteX()
+{
   modeAbsoluteX();
   a = getMem(z);
   atestandsetNZ();
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502ldxAbsoluteY() {
+void CPU6502::cmd6502ldxAbsoluteY()
+{
   modeAbsoluteY();
   x = getMem(z);
   xtestandsetNZ();
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502cpyImmediate() {
+void CPU6502::cmd6502cpyImmediate()
+{
   uint8_t r = getMem(pc++);
   cmpbase(y, r);
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502cmpIndirectX() {
+void CPU6502::cmd6502cmpIndirectX()
+{
   modeIndirectX();
   uint8_t r = getMem(z);
   cmpbase(a, r);
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502cpyZeropage() {
+void CPU6502::cmd6502cpyZeropage()
+{
   modeZeropage();
   uint8_t r = getMem(z);
   cmpbase(y, r);
   numofcycles += 3;
 }
 
-void CPU6502::cmd6502cmpZeropage() {
+void CPU6502::cmd6502cmpZeropage()
+{
   modeZeropage();
   uint8_t r = getMem(z);
   cmpbase(a, r);
   numofcycles += 3;
 }
 
-void CPU6502::cmd6502decZeropage() {
+void CPU6502::cmd6502decZeropage()
+{
   modeZeropage();
   decbase();
   numofcycles += 5;
 }
 
-void CPU6502::cmd6502iny() {
+void CPU6502::cmd6502iny()
+{
   y++;
   setNZ(y);
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502cmpImmediate() {
+void CPU6502::cmd6502cmpImmediate()
+{
   uint8_t r = getMem(pc++);
   cmpbase(a, r);
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502dex() {
+void CPU6502::cmd6502dex()
+{
   x--;
   setNZ(x);
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502cpyAbsolute() {
+void CPU6502::cmd6502cpyAbsolute()
+{
   modeAbsolute();
   uint8_t r = getMem(z);
   cmpbase(y, r);
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502cmpAbsolute() {
+void CPU6502::cmd6502cmpAbsolute()
+{
   modeAbsolute();
   uint8_t r = getMem(z);
   cmpbase(a, r);
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502decAbsolute() {
+void CPU6502::cmd6502decAbsolute()
+{
   modeAbsolute();
   decbase();
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502bne() {
+void CPU6502::cmd6502bne()
+{
   int8_t r = getMem(pc++);
-  if (!zflag) {
+  if (!zflag)
+  {
     pc += r;
     numofcycles++;
   }
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502cmpIndirectY() {
+void CPU6502::cmd6502cmpIndirectY()
+{
   modeIndirectY();
   uint8_t r = getMem(z);
   cmpbase(a, r);
   numofcycles += 5;
 }
 
-void CPU6502::cmd6502cmpZeropageX() {
+void CPU6502::cmd6502cmpZeropageX()
+{
   modeZeropageX();
   uint8_t r = getMem(z);
   cmpbase(a, r);
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502decZeropageX() {
+void CPU6502::cmd6502decZeropageX()
+{
   modeZeropageX();
   decbase();
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502cld() {
+void CPU6502::cmd6502cld()
+{
   dflag = false;
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502cmpAbsoluteY() {
+void CPU6502::cmd6502cmpAbsoluteY()
+{
   modeAbsoluteY();
   uint8_t r = getMem(z);
   cmpbase(a, r);
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502cmpAbsoluteX() {
+void CPU6502::cmd6502cmpAbsoluteX()
+{
   modeAbsoluteX();
   uint8_t r = getMem(z);
   cmpbase(a, r);
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502decAbsoluteX() {
+void CPU6502::cmd6502decAbsoluteX()
+{
   modeAbsoluteX();
   decbase();
   numofcycles += 7;
 }
 
-void CPU6502::cmd6502cpxImmediate() {
+void CPU6502::cmd6502cpxImmediate()
+{
   uint8_t r = getMem(pc++);
   cmpbase(x, r);
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502sbcIndirectX() {
+void CPU6502::cmd6502sbcIndirectX()
+{
   modeIndirectX();
   uint8_t r = getMem(z);
   sbcbase(r);
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502cpxZeropage() {
+void CPU6502::cmd6502cpxZeropage()
+{
   modeZeropage();
   uint8_t r = getMem(z);
   cmpbase(x, r);
   numofcycles += 3;
 }
 
-void CPU6502::cmd6502sbcZeropage() {
+void CPU6502::cmd6502sbcZeropage()
+{
   modeZeropage();
   uint8_t r = getMem(z);
   sbcbase(r);
   numofcycles += 3;
 }
 
-void CPU6502::cmd6502incZeropage() {
+void CPU6502::cmd6502incZeropage()
+{
   modeZeropage();
   incbase();
   numofcycles += 5;
 }
 
-void CPU6502::cmd6502inx() {
+void CPU6502::cmd6502inx()
+{
   x++;
   setNZ(x);
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502sbcImmediate() {
+void CPU6502::cmd6502sbcImmediate()
+{
   uint8_t r = getMem(pc++);
   sbcbase(r);
   numofcycles += 2;
@@ -1295,91 +1497,106 @@ void CPU6502::cmd6502sbcImmediate() {
 
 void CPU6502::cmd6502nop() { numofcycles += 2; }
 
-void CPU6502::cmd6502cpxAbsolute() {
+void CPU6502::cmd6502cpxAbsolute()
+{
   modeAbsolute();
   uint8_t r = getMem(z);
   cmpbase(x, r);
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502sbcAbsolute() {
+void CPU6502::cmd6502sbcAbsolute()
+{
   modeAbsolute();
   uint8_t r = getMem(z);
   sbcbase(r);
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502incAbsolute() {
+void CPU6502::cmd6502incAbsolute()
+{
   modeAbsolute();
   incbase();
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502beq() {
+void CPU6502::cmd6502beq()
+{
   int8_t r = getMem(pc++);
-  if (zflag) {
+  if (zflag)
+  {
     pc += r;
     numofcycles++;
   }
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502sbcIndirectY() {
+void CPU6502::cmd6502sbcIndirectY()
+{
   modeIndirectY();
   uint8_t r = getMem(z);
   sbcbase(r);
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502sbcZeropageX() {
+void CPU6502::cmd6502sbcZeropageX()
+{
   modeZeropageX();
   uint8_t r = getMem(z);
   sbcbase(r);
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502incZeropageX() {
+void CPU6502::cmd6502incZeropageX()
+{
   modeZeropageX();
   incbase();
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502sed() {
+void CPU6502::cmd6502sed()
+{
   dflag = true;
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502sbcAbsoluteY() {
+void CPU6502::cmd6502sbcAbsoluteY()
+{
   modeAbsoluteY();
   uint8_t r = getMem(z);
   sbcbase(r);
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502sbcAbsoluteX() {
+void CPU6502::cmd6502sbcAbsoluteX()
+{
   modeAbsoluteX();
   uint8_t r = getMem(z);
   sbcbase(r);
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502incAbsoluteX() {
+void CPU6502::cmd6502incAbsoluteX()
+{
   modeAbsoluteX();
   incbase();
   numofcycles += 7;
 }
 
-void CPU6502::cmd6502nopImmediate() {
+void CPU6502::cmd6502nopImmediate()
+{
   uint8_t r = getMem(pc++);
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502nopZeropage() {
+void CPU6502::cmd6502nopZeropage()
+{
   modeZeropage();
   numofcycles += 3;
 }
 
-void CPU6502::cmd6502nopZeropageX() {
+void CPU6502::cmd6502nopZeropageX()
+{
   modeZeropageX();
   numofcycles += 4;
 }
@@ -1396,125 +1613,144 @@ void CPU6502::cmd6502nopda() { numofcycles += 2; }
 
 void CPU6502::cmd6502nopfa() { numofcycles += 2; }
 
-void CPU6502::cmd6502alrImmediate() {
+void CPU6502::cmd6502alrImmediate()
+{
   uint8_t r = getMem(pc++);
   a &= r;
   a = lsrbase0(a);
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502saxZeropage() {
+void CPU6502::cmd6502saxZeropage()
+{
   modeZeropage();
   setMem(z, a & x);
   numofcycles += 3;
 }
 
-void CPU6502::cmd6502saxZeropageY() {
+void CPU6502::cmd6502saxZeropageY()
+{
   modeZeropageY();
   setMem(z, a & x);
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502saxAbsolute() {
+void CPU6502::cmd6502saxAbsolute()
+{
   modeAbsolute();
   setMem(z, a & x);
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502saxIndirectX() {
+void CPU6502::cmd6502saxIndirectX()
+{
   modeIndirectX();
   setMem(z, a & x);
   numofcycles += 6;
 }
 
-uint8_t CPU6502::isbincbase() {
+uint8_t CPU6502::isbincbase()
+{
   uint8_t r = getMem(z);
   r++;
   setMem(z, r);
   return r;
 }
 
-void CPU6502::cmd6502isbZeropage() {
+void CPU6502::cmd6502isbZeropage()
+{
   modeZeropage();
   uint8_t r = isbincbase();
   sbcbase(r);
   numofcycles += 5;
 }
 
-void CPU6502::cmd6502isbZeropageX() {
+void CPU6502::cmd6502isbZeropageX()
+{
   modeZeropageX();
   uint8_t r = isbincbase();
   sbcbase(r);
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502isbIndirectX() {
+void CPU6502::cmd6502isbIndirectX()
+{
   modeIndirectX();
   uint8_t r = isbincbase();
   sbcbase(r);
   numofcycles += 8;
 }
 
-void CPU6502::cmd6502isbIndirectY() {
+void CPU6502::cmd6502isbIndirectY()
+{
   modeIndirectY();
   uint8_t r = isbincbase();
   sbcbase(r);
   numofcycles += 8;
 }
 
-void CPU6502::cmd6502isbAbsolute() {
+void CPU6502::cmd6502isbAbsolute()
+{
   modeAbsolute();
   uint8_t r = isbincbase();
   sbcbase(r);
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502isbAbsoluteX() {
+void CPU6502::cmd6502isbAbsoluteX()
+{
   modeAbsoluteX();
   uint8_t r = isbincbase();
   sbcbase(r);
   numofcycles += 7;
 }
 
-void CPU6502::cmd6502isbAbsoluteY() {
+void CPU6502::cmd6502isbAbsoluteY()
+{
   modeAbsoluteY();
   uint8_t r = isbincbase();
   sbcbase(r);
   numofcycles += 7;
 }
 
-void CPU6502::cmd6502skwAbsolute() {
+void CPU6502::cmd6502skwAbsolute()
+{
   modeAbsolute();
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502skwAbsoluteX() {
+void CPU6502::cmd6502skwAbsoluteX()
+{
   modeAbsoluteX();
   numofcycles += 4;
 }
 
-void CPU6502::cmd6502shaZeropageY() {
+void CPU6502::cmd6502shaZeropageY()
+{
   modeZeropageY();
   uint8_t r = a & x & zh;
   setMem(z, r);
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502shaAbsoluteY() {
+void CPU6502::cmd6502shaAbsoluteY()
+{
   modeAbsoluteY();
   uint8_t r = a & x & zh;
   setMem(z, r);
   numofcycles += 5;
 }
 
-void CPU6502::cmd6502shxAbsoluteY() {
+void CPU6502::cmd6502shxAbsoluteY()
+{
   modeAbsoluteY();
   uint8_t r = x & zh;
   setMem(z, r);
   numofcycles += 5;
 }
 
-void CPU6502::cmd6502rraZeropage() {
+void CPU6502::cmd6502rraZeropage()
+{
   modeZeropage();
   rorbase();
   uint8_t r = getMem(z);
@@ -1522,7 +1758,8 @@ void CPU6502::cmd6502rraZeropage() {
   numofcycles += 5;
 }
 
-void CPU6502::cmd6502rraZeropageX() {
+void CPU6502::cmd6502rraZeropageX()
+{
   modeZeropageX();
   rorbase();
   uint8_t r = getMem(z);
@@ -1530,7 +1767,8 @@ void CPU6502::cmd6502rraZeropageX() {
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502rraIndirectX() {
+void CPU6502::cmd6502rraIndirectX()
+{
   modeIndirectX();
   rorbase();
   uint8_t r = getMem(z);
@@ -1538,7 +1776,8 @@ void CPU6502::cmd6502rraIndirectX() {
   numofcycles += 8;
 }
 
-void CPU6502::cmd6502rraIndirectY() {
+void CPU6502::cmd6502rraIndirectY()
+{
   modeIndirectY();
   rorbase();
   uint8_t r = getMem(z);
@@ -1546,7 +1785,8 @@ void CPU6502::cmd6502rraIndirectY() {
   numofcycles += 8;
 }
 
-void CPU6502::cmd6502rraAbsolute() {
+void CPU6502::cmd6502rraAbsolute()
+{
   modeAbsolute();
   rorbase();
   uint8_t r = getMem(z);
@@ -1554,7 +1794,8 @@ void CPU6502::cmd6502rraAbsolute() {
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502rraAbsoluteX() {
+void CPU6502::cmd6502rraAbsoluteX()
+{
   modeAbsoluteX();
   rorbase();
   uint8_t r = getMem(z);
@@ -1562,7 +1803,8 @@ void CPU6502::cmd6502rraAbsoluteX() {
   numofcycles += 7;
 }
 
-void CPU6502::cmd6502rraAbsoluteY() {
+void CPU6502::cmd6502rraAbsoluteY()
+{
   modeAbsoluteY();
   rorbase();
   uint8_t r = getMem(z);
@@ -1570,7 +1812,8 @@ void CPU6502::cmd6502rraAbsoluteY() {
   numofcycles += 7;
 }
 
-void CPU6502::cmd6502asoZeropage() {
+void CPU6502::cmd6502asoZeropage()
+{
   modeZeropage();
   aslbase();
   uint8_t r = getMem(z);
@@ -1579,7 +1822,8 @@ void CPU6502::cmd6502asoZeropage() {
   numofcycles += 5;
 }
 
-void CPU6502::cmd6502asoZeropageX() {
+void CPU6502::cmd6502asoZeropageX()
+{
   modeZeropageX();
   aslbase();
   uint8_t r = getMem(z);
@@ -1588,7 +1832,8 @@ void CPU6502::cmd6502asoZeropageX() {
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502asoIndirectX() {
+void CPU6502::cmd6502asoIndirectX()
+{
   modeIndirectX();
   aslbase();
   uint8_t r = getMem(z);
@@ -1597,7 +1842,8 @@ void CPU6502::cmd6502asoIndirectX() {
   numofcycles += 8;
 }
 
-void CPU6502::cmd6502asoIndirectY() {
+void CPU6502::cmd6502asoIndirectY()
+{
   modeIndirectY();
   aslbase();
   uint8_t r = getMem(z);
@@ -1606,7 +1852,8 @@ void CPU6502::cmd6502asoIndirectY() {
   numofcycles += 8;
 }
 
-void CPU6502::cmd6502asoAbsolute() {
+void CPU6502::cmd6502asoAbsolute()
+{
   modeAbsolute();
   aslbase();
   uint8_t r = getMem(z);
@@ -1615,7 +1862,8 @@ void CPU6502::cmd6502asoAbsolute() {
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502asoAbsoluteX() {
+void CPU6502::cmd6502asoAbsoluteX()
+{
   modeAbsoluteX();
   aslbase();
   uint8_t r = getMem(z);
@@ -1624,7 +1872,8 @@ void CPU6502::cmd6502asoAbsoluteX() {
   numofcycles += 7;
 }
 
-void CPU6502::cmd6502asoAbsoluteY() {
+void CPU6502::cmd6502asoAbsoluteY()
+{
   modeAbsoluteY();
   aslbase();
   uint8_t r = getMem(z);
@@ -1633,7 +1882,8 @@ void CPU6502::cmd6502asoAbsoluteY() {
   numofcycles += 7;
 }
 
-void CPU6502::cmd6502sreZeropage() {
+void CPU6502::cmd6502sreZeropage()
+{
   modeZeropage();
   lsrbase();
   uint8_t r = getMem(z);
@@ -1642,7 +1892,8 @@ void CPU6502::cmd6502sreZeropage() {
   numofcycles += 5;
 }
 
-void CPU6502::cmd6502sreZeropageX() {
+void CPU6502::cmd6502sreZeropageX()
+{
   modeZeropageX();
   lsrbase();
   uint8_t r = getMem(z);
@@ -1651,7 +1902,8 @@ void CPU6502::cmd6502sreZeropageX() {
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502sreIndirectX() {
+void CPU6502::cmd6502sreIndirectX()
+{
   modeIndirectX();
   lsrbase();
   uint8_t r = getMem(z);
@@ -1660,7 +1912,8 @@ void CPU6502::cmd6502sreIndirectX() {
   numofcycles += 8;
 }
 
-void CPU6502::cmd6502sreIndirectY() {
+void CPU6502::cmd6502sreIndirectY()
+{
   modeIndirectY();
   lsrbase();
   uint8_t r = getMem(z);
@@ -1669,7 +1922,8 @@ void CPU6502::cmd6502sreIndirectY() {
   numofcycles += 8;
 }
 
-void CPU6502::cmd6502sreAbsolute() {
+void CPU6502::cmd6502sreAbsolute()
+{
   modeAbsolute();
   lsrbase();
   uint8_t r = getMem(z);
@@ -1678,7 +1932,8 @@ void CPU6502::cmd6502sreAbsolute() {
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502sreAbsoluteX() {
+void CPU6502::cmd6502sreAbsoluteX()
+{
   modeAbsoluteX();
   lsrbase();
   uint8_t r = getMem(z);
@@ -1687,7 +1942,8 @@ void CPU6502::cmd6502sreAbsoluteX() {
   numofcycles += 7;
 }
 
-void CPU6502::cmd6502sreAbsoluteY() {
+void CPU6502::cmd6502sreAbsoluteY()
+{
   modeAbsoluteY();
   lsrbase();
   uint8_t r = getMem(z);
@@ -1696,7 +1952,8 @@ void CPU6502::cmd6502sreAbsoluteY() {
   numofcycles += 7;
 }
 
-void CPU6502::cmd6502dcpZeropage() {
+void CPU6502::cmd6502dcpZeropage()
+{
   modeZeropage();
   decbase();
   uint8_t r = getMem(z);
@@ -1704,7 +1961,8 @@ void CPU6502::cmd6502dcpZeropage() {
   numofcycles += 5;
 }
 
-void CPU6502::cmd6502dcpZeropageX() {
+void CPU6502::cmd6502dcpZeropageX()
+{
   modeZeropageX();
   decbase();
   uint8_t r = getMem(z);
@@ -1712,7 +1970,8 @@ void CPU6502::cmd6502dcpZeropageX() {
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502dcpIndirectX() {
+void CPU6502::cmd6502dcpIndirectX()
+{
   modeIndirectX();
   decbase();
   uint8_t r = getMem(z);
@@ -1720,7 +1979,8 @@ void CPU6502::cmd6502dcpIndirectX() {
   numofcycles += 8;
 }
 
-void CPU6502::cmd6502dcpIndirectY() {
+void CPU6502::cmd6502dcpIndirectY()
+{
   modeIndirectY();
   decbase();
   uint8_t r = getMem(z);
@@ -1728,7 +1988,8 @@ void CPU6502::cmd6502dcpIndirectY() {
   numofcycles += 8;
 }
 
-void CPU6502::cmd6502dcpAbsolute() {
+void CPU6502::cmd6502dcpAbsolute()
+{
   modeAbsolute();
   decbase();
   uint8_t r = getMem(z);
@@ -1736,7 +1997,8 @@ void CPU6502::cmd6502dcpAbsolute() {
   numofcycles += 6;
 }
 
-void CPU6502::cmd6502dcpAbsoluteX() {
+void CPU6502::cmd6502dcpAbsoluteX()
+{
   modeAbsoluteX();
   decbase();
   uint8_t r = getMem(z);
@@ -1744,7 +2006,8 @@ void CPU6502::cmd6502dcpAbsoluteX() {
   numofcycles += 7;
 }
 
-void CPU6502::cmd6502dcpAbsoluteY() {
+void CPU6502::cmd6502dcpAbsoluteY()
+{
   modeAbsoluteY();
   decbase();
   uint8_t r = getMem(z);
@@ -1752,21 +2015,24 @@ void CPU6502::cmd6502dcpAbsoluteY() {
   numofcycles += 7;
 }
 
-void CPU6502::cmd6502xaaImmediate() {
+void CPU6502::cmd6502xaaImmediate()
+{
   uint8_t r = getMem(pc++);
   a = (a | 0xfe) & x & r;
   atestandsetNZ();
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502sbxImmediate() {
+void CPU6502::cmd6502sbxImmediate()
+{
   uint8_t r = getMem(pc++);
   x = a & x - r;
   cmpbase(a & x, r);
   numofcycles += 2;
 }
 
-void CPU6502::cmd6502lasAbsolute() {
+void CPU6502::cmd6502lasAbsolute()
+{
   x = sp;
   a = x;
   modeAbsoluteY();
@@ -1778,12 +2044,14 @@ void CPU6502::cmd6502lasAbsolute() {
   numofcycles += 4;
 }
 
-void CPU6502::execute(uint8_t idx) {
+void CPU6502::execute(uint8_t idx)
+{
   ESP_LOGI(TAG, "execute %s", cmdName[idx]);
   (this->*cmdarr6502[idx])();
 }
 
-void CPU6502::setPCToIntVec(uint16_t intvect, bool intfrombrk) {
+void CPU6502::setPCToIntVec(uint16_t intvect, bool intfrombrk)
+{
   // push actual address to 6502 stack
   uint8_t pcl = pc & 0xFF;
   uint8_t pch = (pc >> 8);

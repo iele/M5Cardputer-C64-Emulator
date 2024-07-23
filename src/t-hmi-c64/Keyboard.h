@@ -1,3 +1,21 @@
+/*
+ Copyright (C) 2024 iEle <melephas@gmail.com>
+ Copyright (C) 2024 retroelec <retroelec42@gmail.com>
+
+ This program is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License as published by the
+ Free Software Foundation; either version 3 of the License, or (at your
+ option) any later version.
+
+ This program is distributed in the hope that it will be useful, but
+ WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+ for more details.
+
+ For the complete text of the GNU General Public License see
+ http://www.gnu.org/licenses/.
+*/
+
 #pragma once
 
 #include <M5Cardputer.h>
@@ -8,6 +26,7 @@
 #define KEY_SIZE 0xFF
 #define INLINE IRAM_ATTR inline __attribute__((always_inline, flatten))
 
+// clang-format off
 typedef enum code {
   CODE_DELETE, CODE_RETURN, CODE_CRSRRT,    CODE_F7,    CODE_F1,     CODE_F3,    CODE_F5,    CODE_CRSRDN,
   CODE_3,      CODE_W,      CODE_A,         CODE_4,     CODE_Z,      CODE_S,     CODE_E,     CODE_LSHIFT,
@@ -16,15 +35,44 @@ typedef enum code {
   CODE_9,      CODE_I,      CODE_J,         CODE_0,     CODE_M,      CODE_K,     CODE_O,     CODE_N,
   CODE_PLUS,   CODE_P,      CODE_L,         CODE_MINUS, CODE_PERIOD, CODE_COLON, CODE_AT,    CODE_COMMA,
   CODE_POUND,  CODE_STAR,   CODE_SEMICOLON, CODE_HOME,  CODE_RSHIFT, CODE_EUQAL, CODE_CARET, CODE_SLASH,
-  CODE_1,      CODE_BACK,   CODE_CTRL,      CODE_2,     CODE_SPACE,  CODE_GUI,   CODE_Q,     CODE_STOP, CODE_INVALID,
+  CODE_1,      CODE_BACK,   CODE_CTRL,      CODE_2,     CODE_SPACE,  CODE_GUI,   CODE_Q,     CODE_STOP,
+
+  CODE_BANG = 184,            //!
+  CODE_QOUTE = 187,           //"
+  CODE_HASH = 136,            // #
+  CODE_DOLLAR = 139,          //$
+  CODE_PERCENT = 144,         //%
+  CODE_AND = 147,             //&
+  CODE_BACKQOUTE = 152,       //`
+  CODE_LEFTPARENTHESES = 155, //(
+  CODE_RIGHTPARENTHESES = 160,//)
+  CODE_LEFTBRACES = 173,      //[
+  CODE_RIGHTBRACES = 178,     //]
+  CODE_LEFTCHEVRONS = 175,    //<
+  CODE_RIGHTCHEVRONS = 172,   //>
+  CODE_QUESTION= 183,         //?
+
+  CODE_UPPER = 128,
+  CODE_INVALID = 255,
 } CODE;
 
-const CODE kb_map[4][14] = {
-    {CODE_INVALID, CODE_1, CODE_2, CODE_3, CODE_4, CODE_5, CODE_6, CODE_7, CODE_8, CODE_9, CODE_0, CODE_MINUS, CODE_EUQAL, CODE_DELETE},
-    {CODE_INVALID, CODE_Q, CODE_W, CODE_E, CODE_R, CODE_T, CODE_Y, CODE_U, CODE_I, CODE_O, CODE_P, CODE_INVALID, CODE_INVALID, CODE_INVALID},
-    {CODE_INVALID, CODE_INVALID, CODE_A, CODE_S, CODE_D, CODE_F, CODE_G, CODE_H, CODE_J, CODE_K, CODE_L, CODE_SEMICOLON, CODE_INVALID, CODE_RETURN},
-    {CODE_INVALID, CODE_INVALID, CODE_INVALID, CODE_Z, CODE_X, CODE_C, CODE_V, CODE_B, CODE_N, CODE_M, CODE_COMMA, CODE_PERIOD, CODE_SLASH, CODE_SPACE}};
+// 0x00______ code
+// 0x11111111 invalid
+// 0x10______ SHIFT + code
 
+const CODE kb_map[4][14] = {
+    {CODE_BACKQOUTE, CODE_1,      CODE_2,      CODE_3, CODE_4, CODE_5, CODE_6, CODE_7, CODE_8, CODE_9, CODE_0,     CODE_INVALID,    CODE_EUQAL,       CODE_BACK},
+    {CODE_INVALID,   CODE_Q,      CODE_W,      CODE_E, CODE_R, CODE_T, CODE_Y, CODE_U, CODE_I, CODE_O, CODE_P,     CODE_LEFTBRACES, CODE_RIGHTBRACES, CODE_SLASH},
+    {CODE_GUI,       CODE_UPPER,  CODE_A,      CODE_S, CODE_D, CODE_F, CODE_G, CODE_H, CODE_J, CODE_K, CODE_L,     CODE_SEMICOLON,  CODE_BACKQOUTE,   CODE_RETURN},
+    {CODE_CTRL,      CODE_LSHIFT, CODE_RSHIFT, CODE_Z, CODE_X, CODE_C, CODE_V, CODE_B, CODE_N, CODE_M, CODE_COMMA, CODE_PERIOD,     CODE_SLASH,       CODE_SPACE}};
+
+// when Aa pressed
+const CODE kb_map_upper[4][14] = {
+    {CODE_F1, CODE_BANG,    CODE_AT,      CODE_HASH, CODE_DOLLAR, CODE_PERCENT, CODE_CARET, CODE_AND, CODE_STAR, CODE_LEFTPARENTHESES, CODE_RIGHTPARENTHESES, CODE_MINUS,         CODE_PLUS,     CODE_DELETE},
+    {CODE_F3, CODE_Q,       CODE_W,       CODE_E,    CODE_R,      CODE_T,       CODE_Y,     CODE_U,   CODE_I,    CODE_O,               CODE_P,                CODE_INVALID,       CODE_INVALID,  CODE_INVALID},
+    {CODE_F5, CODE_INVALID, CODE_A,       CODE_S,    CODE_D,      CODE_F,       CODE_G,     CODE_H,   CODE_J,    CODE_K,               CODE_L,                CODE_SEMICOLON,     CODE_QOUTE,    CODE_RETURN},
+    {CODE_F7, CODE_INVALID, CODE_INVALID, CODE_Z,    CODE_X,      CODE_C,       CODE_V,     CODE_B,   CODE_N,    CODE_M,               CODE_LEFTCHEVRONS,     CODE_RIGHTCHEVRONS, CODE_QUESTION, CODE_SPACE}};
+// clang-format on
 
 static const uint8_t C64JOYUP = 0;
 static const uint8_t C64JOYDOWN = 1;

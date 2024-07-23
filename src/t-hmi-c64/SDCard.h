@@ -1,4 +1,5 @@
 /*
+ Copyright (C) 2024 iEle <melephas@gmail.com>
  Copyright (C) 2024 retroelec <retroelec42@gmail.com>
 
  This program is free software; you can redistribute it and/or modify it
@@ -14,8 +15,7 @@
  For the complete text of the GNU General Public License see
  http://www.gnu.org/licenses/.
 */
-#ifndef SDCARD_H
-#define SDCARD_H
+#pragma once
 
 #include <FS.h>
 #include <SD_MMC.h>
@@ -34,5 +34,3 @@ public:
   uint16_t loadFile(fs::FS &fs, const std::string& path, uint8_t *ram);
   std::string loadBas(fs::FS &fs, const std::string& path);
 };
-
-#endif // SDCARD_H

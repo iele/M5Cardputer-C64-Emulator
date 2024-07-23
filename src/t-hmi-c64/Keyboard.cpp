@@ -1,3 +1,21 @@
+/*
+ Copyright (C) 2024 iEle <melephas@gmail.com>
+ Copyright (C) 2024 retroelec <retroelec42@gmail.com>
+
+ This program is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License as published by the
+ Free Software Foundation; either version 3 of the License, or (at your
+ option) any later version.
+
+ This program is distributed in the hope that it will be useful, but
+ WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+ for more details.
+
+ For the complete text of the GNU General Public License see
+ http://www.gnu.org/licenses/.
+*/
+
 #include "Keyboard.h"
 
 static const char *TAG = "Keyboard";
@@ -18,6 +36,10 @@ void Keyboard::handleKeyDown(CODE k)
 {
   try
   {
+    CODE code = (CODE)(((int)k < (int)CODE_UPPER) ? k : k - CODE_UPPER);
+    if (k > CODE_UPPER) {
+      keyboard_matrix_[1] &= 0b01111111;
+    }
     uint8_t first = (k >> 3) & 0x7;
     uint8_t second = k & 0x7;
     uint8_t mask = ~(1 << second);
@@ -32,6 +54,10 @@ void Keyboard::handleKeyUp(CODE k)
 {
   try
   {
+    CODE code = (CODE)(((int)k < (int)CODE_UPPER) ? k : k - CODE_UPPER);
+    if (k > CODE_UPPER) {
+      keyboard_matrix_[1] |=  0b10000000;
+    }
     uint8_t first = (k >> 3) & 0x7;
     uint8_t second = k & 0x7;
     uint8_t mask = 1 << second;
@@ -80,18 +106,29 @@ void Keyboard::handleKeyboard()
   {
     bool new_kb_state[KEY_SIZE] = {0};
     // map key_code
+    bool use_upper = false;
+
+    uint8_t key_code;
     for (auto &i : keys)
     {
-      uint8_t key_code;
       key_code = kb_map[i.y][i.x];
-      if (key_code == CODE_INVALID)
+      if (key_code == CODE_UPPER) {
+        use_upper = true;
+        break;
+      }
+    }
+
+    for (auto &i : keys)
+    {
+      key_code = use_upper ? kb_map_upper[i.y][i.x] : kb_map[i.y][i.x];
+      if (key_code == CODE_INVALID || key_code == CODE_UPPER)
       {
         continue;
       }
       new_kb_state[key_code] = true;
     }
 
-    for (int i = 0; i < KEY_SIZE; i++)
+   for (int i = 0; i < KEY_SIZE; i++)
     {
       if (new_kb_state[i] == true && kb_state[i] == false)
       {
