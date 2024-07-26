@@ -25,11 +25,13 @@ static const char *TAG = "T-HMI-C64";
 
 void setup()
 {
-  M5Cardputer.begin();
-  sdcard.init();
-
   disableCore0WDT();
   disableCore1WDT();
+  disableLoopWDT();
+  auto cfg = M5.config();
+  cfg.fallback_board = m5::board_t::board_M5Cardputer;
+  M5Cardputer.begin(cfg);
+  sdcard.init();
 }
 
 void loop()

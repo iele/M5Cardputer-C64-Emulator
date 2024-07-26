@@ -721,7 +721,7 @@ void VIC::init(uint8_t *ram, uint8_t *charrom)
 
 void VIC::refresh(bool refreshframecolor)
 {
-  canvas.setClipRect(0, 0, 320, 200);
+  //canvas.setClipRect(0, 0, 320, 200);
   canvas.pushRotateZoomWithAA(&M5Cardputer.Display, M5Cardputer.Display.width() / 2, M5Cardputer.Display.height() / 2, 0, 0.675, 0.675);
   // ST7789V::drawBitmap();
   // if (refreshframecolor) {

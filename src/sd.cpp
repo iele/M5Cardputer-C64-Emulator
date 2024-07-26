@@ -7,15 +7,29 @@
 
 String fileList[MAXFILES][3];
 
-#define MAX_ITEMS 7
+#define MAX_ITEMS 6
 void listFiles(int index, String fileList[][3])
 {
-    M5Cardputer.Display.fillScreen(BGCOLOR);
-    M5Cardputer.Display.drawRoundRect(5, 5, WIDTH - 10, HEIGHT - 10, 5, FGCOLOR);
-    M5Cardputer.Display.setCursor(10, 20);
-    M5Cardputer.Display.setFont(&Font2);
-    M5Cardputer.Display.setTextDatum(L_BASELINE);
-    M5Cardputer.Display.setTextSize(FM);
+    M5Canvas canvas;
+    canvas.createSprite(WIDTH, HEIGHT);
+    canvas.fillScreen(BGCOLOR);
+    canvas.fillRoundRect(0, 0, WIDTH, 20, 5, FGCOLOR);
+
+    canvas.setCursor(10, 14);
+    canvas.setTextColor(TFT_BLACK, FGCOLOR);
+    canvas.setFont(&DejaVu12);
+    canvas.setTextDatum(L_BASELINE);
+    canvas.setTextSize(FM);
+    canvas.println("C64 Emulator");
+    canvas.setTextDatum(R_BASELINE);
+    char batteryStr[4];
+    sprintf(batteryStr, "%d\n", M5Cardputer.Power.getBatteryLevel());
+    canvas.setCursor(WIDTH - 10 - canvas.textWidth(batteryStr), 14);
+    canvas.println(batteryStr);
+
+    canvas.setFont(&Font2);
+    canvas.setTextDatum(L_BASELINE);
+    canvas.setTextSize(FM);
     int arraySize = 0;
     while (fileList[arraySize][2] != "" && arraySize < MAXFILES)
         arraySize++;
@@ -28,28 +42,31 @@ void listFiles(int index, String fileList[][3])
             start = 0;
     }
 
+    canvas.setCursor(10, 40);
     while (i < arraySize)
     {
+        canvas.setCursor(10, canvas.getCursorY());
         if (i >= start && fileList[i][2] != "")
         {
-            M5Cardputer.Display.setCursor(10, M5Cardputer.Display.getCursorY());
             if (fileList[i][2] == "folder")
-                M5Cardputer.Display.setTextColor(FGCOLOR - 0x1111);
+                canvas.setTextColor(FGCOLOR - 0x1111, TFT_BLACK);
             else if (fileList[i][2] == "operator")
-                M5Cardputer.Display.setTextColor(ALCOLOR);
+                canvas.setTextColor(ALCOLOR, TFT_BLACK);
             else
-                M5Cardputer.Display.setTextColor(FGCOLOR);
+                canvas.setTextColor(FGCOLOR, TFT_BLACK);
 
             if (index == i)
-                M5Cardputer.Display.print(">");
+                canvas.print(">");
             else
-                M5Cardputer.Display.print(" ");
-            M5Cardputer.Display.println(fileList[i][0].substring(0, 30));
+                canvas.print(" ");
+            canvas.println(fileList[i][0].substring(0, 30));
         }
         i++;
         if (i == (start + MAX_ITEMS) || fileList[i][2] == "")
             break;
     }
+    canvas.pushSprite(&M5Cardputer.Display, 0, 0);
+    canvas.deleteSprite();
 }
 
 void sortList(String fileList[][3], int fileListCount)
@@ -185,7 +202,6 @@ String loopSD(FS &fs)
     String PreFolder = "/";
 
     M5Cardputer.Display.fillScreen(BGCOLOR);
-    M5Cardputer.Display.drawRoundRect(5, 5, WIDTH - 10, HEIGHT - 10, 5, FGCOLOR);
 
     readFs(fs, Folder, fileList);
 
@@ -274,7 +290,6 @@ start:
     int maxFiles = 2;
 
     M5Cardputer.Display.fillScreen(BGCOLOR);
-    M5Cardputer.Display.drawRoundRect(5, 5, WIDTH - 10, HEIGHT - 10, 5, FGCOLOR);
 
     while (1)
     {

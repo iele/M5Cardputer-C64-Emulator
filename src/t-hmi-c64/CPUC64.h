@@ -64,7 +64,7 @@ public:
   std::atomic<uint16_t> adjustcycles;
   std::atomic<uint16_t> measuredcycles;
 
-  uint8_t joysitckMode;
+  uint8_t joystickMode;
   bool refreshframecolor;
 
   bool restorenmi;

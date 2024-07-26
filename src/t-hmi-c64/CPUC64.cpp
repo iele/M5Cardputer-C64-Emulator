@@ -158,7 +158,7 @@ uint8_t CPUC64::getMem(uint16_t addr)
       {
         // if (joystickmode == 2) {
         //   // real joystick
-        if (keyboard->joysitckMode())
+        if (keyboard->joystickMode() == 1)
         {
           return keyboard->getJoyStickValue(true, cia1.ciareg[0x00], cia1.ciareg[0x02]);
         }
@@ -172,7 +172,7 @@ uint8_t CPUC64::getMem(uint16_t addr)
       }
       else if (ciaidx == 0x01)
       {
-        if (keyboard->joysitckMode())
+        if (keyboard->joystickMode() == 2)
         {
           if ((cia1.ciareg[0x00] == 0x7f) && keyboard->getJoyStickFire())
           {
@@ -574,7 +574,7 @@ uint8_t CPUC64::getSR() { return sr; }
 
 uint16_t CPUC64::getPC() { return pc; }
 
-void CPUC64::run()
+void IRAM_ATTR CPUC64::run()
 {
   // pc *must* be set externally!
   cpuhalted = false;

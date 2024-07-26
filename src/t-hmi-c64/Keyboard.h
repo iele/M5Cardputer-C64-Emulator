@@ -37,11 +37,11 @@ typedef enum code {
   CODE_POUND,  CODE_STAR,   CODE_SEMICOLON, CODE_HOME,  CODE_RSHIFT, CODE_EUQAL, CODE_CARET, CODE_SLASH,
   CODE_1,      CODE_BACK,   CODE_CTRL,      CODE_2,     CODE_SPACE,  CODE_GUI,   CODE_Q,     CODE_STOP,
 
-  //CODE_LW = 73, CODE_LA = 74, CODE_LZ = 76, CODE_LS = 77, CODE_LE = 78, 
-  //CODE_LR = 81, CODE_LD = 82, CODE_LC = 84, CODE_LF = 85, CODE_LT = 86, 
-  //CODE_LX = 87, CODE_LY = 89, CODE_LG = 90, CODE_LB = 92, CODE_LH = 93, 
-  //CODE_LU = 94, CODE_LV = 95, CODE_LI = 96, CODE_LJ = 97, CODE_LM = 98, 
-  //CODE_LK = 99, CODE_LO = 100, CODE_LN = 101, CODE_LP = 105, CODE_LL = 106, 
+  //CODE_LW = 73, CODE_LA = 74, CODE_LZ = 76, CODE_LS = 77, CODE_LE = 78,
+  //CODE_LR = 81, CODE_LD = 82, CODE_LC = 84, CODE_LF = 85, CODE_LT = 86,
+  //CODE_LX = 87, CODE_LY = 89, CODE_LG = 90, CODE_LB = 92, CODE_LH = 93,
+  //CODE_LU = 94, CODE_LV = 95, CODE_LI = 96, CODE_LJ = 97, CODE_LM = 98,
+  //CODE_LK = 99, CODE_LO = 100, CODE_LN = 101, CODE_LP = 105, CODE_LL = 106,
   //CODE_LQ = 126,
 
   CODE_BANG = 184,            //!
@@ -69,7 +69,7 @@ typedef enum code {
 // 0x10______ SHIFT + code
 
 const CODE kb_map[4][14] = {
-    {CODE_BACKQOUTE, CODE_1,      CODE_2,      CODE_3, CODE_4, CODE_5, CODE_6, CODE_7, CODE_8, CODE_9, CODE_0,     CODE_INVALID,    CODE_EUQAL,       CODE_BACK},
+    {CODE_INVALID, CODE_1,      CODE_2,      CODE_3, CODE_4, CODE_5, CODE_6, CODE_7, CODE_8, CODE_9, CODE_0,     CODE_INVALID,    CODE_EUQAL,       CODE_BACK},
     {CODE_INVALID,   CODE_Q,      CODE_W,      CODE_E, CODE_R, CODE_T, CODE_Y, CODE_U, CODE_I, CODE_O, CODE_P,     CODE_LEFTBRACES, CODE_RIGHTBRACES, CODE_SLASH},
     {CODE_GUI,       CODE_EXT,  CODE_A,      CODE_S, CODE_D, CODE_F, CODE_G, CODE_H, CODE_J, CODE_K, CODE_L,     CODE_SEMICOLON,  CODE_BACKQOUTE,   CODE_RETURN},
     {CODE_CTRL,      CODE_LSHIFT, CODE_RSHIFT, CODE_Z, CODE_X, CODE_C, CODE_V, CODE_B, CODE_N, CODE_M, CODE_COMMA, CODE_PERIOD,     CODE_SLASH,       CODE_SPACE}};
@@ -93,7 +93,7 @@ class Keyboard
 private:
   bool kb_state[KEY_SIZE] = {0};
   uint8_t keyboard_matrix_[8];
-  std::atomic<bool> joysitckMode_;
+  std::atomic<int> joystickMode_;
   std::atomic<bool> reset_;
   bool retval_ = true;
   /* keyboard mappings */
@@ -111,7 +111,7 @@ private:
 
 public:
   INLINE uint8_t keyboard_matrix_row(int col) { return keyboard_matrix_[col]; };
-  INLINE bool joysitckMode() { return joysitckMode_; };
+  INLINE int joystickMode() { return joystickMode_; };
   INLINE bool reset() { return reset_; };
   void init();
   void handleKeyboard();

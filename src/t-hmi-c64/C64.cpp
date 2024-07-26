@@ -54,6 +54,7 @@ hw_timer_t *interruptSystem = NULL;
 TaskHandle_t cpuTask;
 TaskHandle_t vicTask;
 TaskHandle_t loadTask;
+TaskHandle_t keyboardTask;
 
 void IRAM_ATTR interruptProfilingFunc()
 {
@@ -170,7 +171,6 @@ void IRAM_ATTR interruptSystemFunc()
   checkForKeyboardCnt++;
   if (checkForKeyboardCnt > 50)
   {
-    keyboard.handleKeyboard();
     checkForKeyboardCnt = 0;
   }
 
@@ -209,6 +209,15 @@ void vicRefresh(void *parameter)
   {
     vic.refresh(cpu.refreshframecolor);
     vTaskDelay(1);
+  }
+}
+
+void handleKeyboard(void *parameter)
+{
+  while (true)
+  {
+    keyboard.handleKeyboard();
+    vTaskDelay(50);
   }
 }
 
@@ -318,6 +327,14 @@ void C64::run(const std::string &path)
                           &loadTask,            // Task handle
                           1);                   // Core where the task should run
 
+  xTaskCreatePinnedToCore(handleKeyboard,      // Function to implement the task
+                          "keyboard",    // Name of the task
+                          10000,         // Stack size in words
+                          NULL,          // Task input parameter
+                          10,            // Priority of the task
+                          &keyboardTask, // Task handle
+                          0);            // Core where the task should run
+
   while (!keyboard.reset())
   {
     vTaskDelay(1000);
@@ -325,6 +342,7 @@ void C64::run(const std::string &path)
 
   vTaskDelete(cpuTask);
   vTaskDelete(vicTask);
+  vTaskDelete(keyboardTask);
 
   timerAlarmDisable(interruptProfiling);
   timerAlarmDisable(interruptTOD);

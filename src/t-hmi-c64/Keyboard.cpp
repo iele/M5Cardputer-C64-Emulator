@@ -92,38 +92,36 @@ void Keyboard::init()
   charmap_['^'] = {CODE_CARET};
   charmap_['`'] = {CODE_BACKQOUTE};
   charmap_['\''] = {CODE_BACKQOUTE};
-  //charmap_['a'] = {CODE_LA};
-  //charmap_['b'] = {CODE_LB};
-  //charmap_['c'] = {CODE_LC};
-  //charmap_['d'] = {CODE_LD};
-  //charmap_['e'] = {CODE_LE};
-  //charmap_['f'] = {CODE_LF};
-  //charmap_['g'] = {CODE_LG};
-  //charmap_['h'] = {CODE_LH};
-  //charmap_['i'] = {CODE_LI};
-  //charmap_['j'] = {CODE_LJ};
-  //charmap_['k'] = {CODE_LK};
-  //charmap_['l'] = {CODE_LL};
-  //charmap_['m'] = {CODE_LM};
-  //charmap_['n'] = {CODE_LN};
-  //charmap_['o'] = {CODE_LO};
-  //charmap_['p'] = {CODE_LP};
-  //charmap_['q'] = {CODE_LQ};
-  //charmap_['r'] = {CODE_LR};
-  //charmap_['s'] = {CODE_LS};
-  //charmap_['t'] = {CODE_LT};
-  //charmap_['u'] = {CODE_LU};
-  //charmap_['v'] = {CODE_LV};
-  //charmap_['w'] = {CODE_LW};
-  //charmap_['x'] = {CODE_LX};
-  //charmap_['y'] = {CODE_LY};
-  //charmap_['z'] = {CODE_LZ};
+  // charmap_['a'] = {CODE_LA};
+  // charmap_['b'] = {CODE_LB};
+  // charmap_['c'] = {CODE_LC};
+  // charmap_['d'] = {CODE_LD};
+  // charmap_['e'] = {CODE_LE};
+  // charmap_['f'] = {CODE_LF};
+  // charmap_['g'] = {CODE_LG};
+  // charmap_['h'] = {CODE_LH};
+  // charmap_['i'] = {CODE_LI};
+  // charmap_['j'] = {CODE_LJ};
+  // charmap_['k'] = {CODE_LK};
+  // charmap_['l'] = {CODE_LL};
+  // charmap_['m'] = {CODE_LM};
+  // charmap_['n'] = {CODE_LN};
+  // charmap_['o'] = {CODE_LO};
+  // charmap_['p'] = {CODE_LP};
+  // charmap_['q'] = {CODE_LQ};
+  // charmap_['r'] = {CODE_LR};
+  // charmap_['s'] = {CODE_LS};
+  // charmap_['t'] = {CODE_LT};
+  // charmap_['u'] = {CODE_LU};
+  // charmap_['v'] = {CODE_LV};
+  // charmap_['w'] = {CODE_LW};
+  // charmap_['x'] = {CODE_LX};
+  // charmap_['y'] = {CODE_LY};
+  // charmap_['z'] = {CODE_LZ};
   charmap_['{'] = {CODE_LEFTBRACES};
   charmap_['}'] = {CODE_RIGHTBRACES};
-  charmap_['<'] = {CODE_LEFTCHEVRONS};
-  charmap_['>'] = {CODE_RIGHTCHEVRONS};
 
-  joysitckMode_ = false;
+  joystickMode_ = false;
   reset_ = false;
 }
 
@@ -190,17 +188,41 @@ void Keyboard::handleKeyUp(CODE k)
 
 void Keyboard::handleKeyboard()
 {
-  M5Cardputer.update();
-  if (M5Cardputer.BtnA.wasHold())
+  if (!key_event_queue_.empty())
   {
-    reset_ = ~reset_;
+    std::pair<kKeyEvent, CODE> &ev = key_event_queue_.front();
+    key_event_queue_.pop();
+    switch (ev.first)
+    {
+    case kPress:
+      handleKeyDown(ev.second);
+      break;
+    case kRelease:
+      handleKeyUp(ev.second);
+      break;
+    }
+    return;
   }
-  if (M5Cardputer.BtnA.wasClicked())
-  {
-    joysitckMode_ = joysitckMode_ ? false : true;
-  }
+
+  M5Cardputer.Keyboard.updateKeyList();
+  M5Cardputer.Keyboard.updateKeysState();
+
+  //if (M5Cardputer.BtnA.wasHold())
+  //{
+  //  reset_ = ~reset_;
+  //}
+  //if (M5Cardputer.BtnA.wasClicked())
+  //{
+  //  joystickMode_ = joystickMode_ ? false : true;
+  //}
+
   std::vector<Point2D_t> keys = M5Cardputer.Keyboard.keyList();
-  if (joysitckMode_)
+  if (M5Cardputer.Keyboard.isKeyPressed('`'))
+  {
+    joystickMode_ = joystickMode_ < 2 ? joystickMode_ + 1 : 0;
+  }
+
+  if (joystickMode_ != 0)
   {
     joystickValue = 0xff;
     joystickFire = false;
@@ -217,7 +239,7 @@ void Keyboard::handleKeyboard()
     if (M5Cardputer.Keyboard.isKeyPressed('/'))
       joystickValue &= ~(1 << C64JOYRIGHT);
     // fire
-    if (M5Cardputer.Keyboard.isKeyPressed('a'))
+    if (M5Cardputer.Keyboard.isKeyPressed(KEY_TAB))
     {
       joystickValue &= ~(1 << C64JOYFIRE);
       joystickFire = true;
@@ -263,21 +285,6 @@ void Keyboard::handleKeyboard()
         handleKeyUp((CODE)i);
       }
       kb_state[i] = new_kb_state[i];
-    }
-  }
-
-  if (!key_event_queue_.empty())
-  {
-    std::pair<kKeyEvent, CODE> &ev = key_event_queue_.front();
-    key_event_queue_.pop();
-    switch (ev.first)
-    {
-    case kPress:
-      handleKeyDown(ev.second);
-      break;
-    case kRelease:
-      handleKeyUp(ev.second);
-      break;
     }
   }
 }
