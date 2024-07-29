@@ -25,12 +25,19 @@
 #include "loadactions.h"
 #include "Keyboard.h"
 #include <algorithm>
+#include "LiteLED.h"
+
+#define LED_TYPE LED_STRIP_SK6812
+#define LED_TYPE_IS_RGBW 1
+#define LED_BRIGHT 245
 
 static const char *TAG = "C64";
 
 static const uint16_t INTERRUPTSYSTEMRESOLUTION = 1000;
 
 SDCard sdcard;
+
+LiteLED led(LED_TYPE, LED_TYPE_IS_RGBW);
 
 uint8_t *ram;
 VIC vic;
@@ -217,6 +224,18 @@ void handleKeyboard(void *parameter)
   while (true)
   {
     keyboard.handleKeyboard();
+    if (keyboard.joystickMode() == 0)
+    {
+      led.fill(rgb_from_values(255, 255, 255), true);
+    }
+    else if (keyboard.joystickMode() == 1)
+    {
+      led.fill(rgb_from_values(255, 0, 0), true);
+    }
+    else
+    {
+      led.fill(rgb_from_values(0, 255, 0), true);
+    }
     vTaskDelay(50);
   }
 }
@@ -290,6 +309,8 @@ void C64::run(const std::string &path)
   // init CPU
   cpu.init(ram, charset_rom, &vic, &keyboard);
 
+  led.begin(21, 1);
+
   // start cpu task
   xTaskCreatePinnedToCore(cpuCode,  // Function to implement the task
                           "CPU",    // Name of the task
@@ -327,13 +348,13 @@ void C64::run(const std::string &path)
                           &loadTask,            // Task handle
                           1);                   // Core where the task should run
 
-  xTaskCreatePinnedToCore(handleKeyboard,      // Function to implement the task
-                          "keyboard",    // Name of the task
-                          10000,         // Stack size in words
-                          NULL,          // Task input parameter
-                          10,            // Priority of the task
-                          &keyboardTask, // Task handle
-                          0);            // Core where the task should run
+  xTaskCreatePinnedToCore(handleKeyboard, // Function to implement the task
+                          "keyboard",     // Name of the task
+                          10000,          // Stack size in words
+                          NULL,           // Task input parameter
+                          10,             // Priority of the task
+                          &keyboardTask,  // Task handle
+                          0);             // Core where the task should run
 
   while (!keyboard.reset())
   {
@@ -353,6 +374,8 @@ void C64::run(const std::string &path)
   timerEnd(interruptProfiling);
   timerEnd(interruptTOD);
   timerEnd(interruptSystem);
+
+  led.clear(false);
 
   delete ram;
 }

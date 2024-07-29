@@ -204,24 +204,19 @@ void Keyboard::handleKeyboard()
     return;
   }
 
-  M5Cardputer.Keyboard.updateKeyList();
-  M5Cardputer.Keyboard.updateKeysState();
-
-  //if (M5Cardputer.BtnA.wasHold())
-  //{
-  //  reset_ = ~reset_;
-  //}
-  //if (M5Cardputer.BtnA.wasClicked())
-  //{
-  //  joystickMode_ = joystickMode_ ? false : true;
-  //}
-
-  std::vector<Point2D_t> keys = M5Cardputer.Keyboard.keyList();
-  if (M5Cardputer.Keyboard.isKeyPressed('`'))
+  btnA.setRawState(millis(), (!m5gfx::gpio_in(GPIO_NUM_0)) & 1);
+  if (btnA.wasHold())
+  {
+    reset_ = ~reset_;
+  }
+  if (btnA.wasClicked())
   {
     joystickMode_ = joystickMode_ < 2 ? joystickMode_ + 1 : 0;
   }
 
+  M5Cardputer.Keyboard.updateKeyList();
+  M5Cardputer.Keyboard.updateKeysState();
+  std::vector<Point2D_t> keys = M5Cardputer.Keyboard.keyList();
   if (joystickMode_ != 0)
   {
     joystickValue = 0xff;
@@ -239,7 +234,7 @@ void Keyboard::handleKeyboard()
     if (M5Cardputer.Keyboard.isKeyPressed('/'))
       joystickValue &= ~(1 << C64JOYRIGHT);
     // fire
-    if (M5Cardputer.Keyboard.isKeyPressed(KEY_TAB))
+    if (M5Cardputer.Keyboard.isKeyPressed('A'))
     {
       joystickValue &= ~(1 << C64JOYFIRE);
       joystickFire = true;
@@ -262,11 +257,16 @@ void Keyboard::handleKeyboard()
       }
     }
 
+    restore_ = false;
     for (auto &i : keys)
     {
       key_code = use_upper ? kb_map_upper[i.y][i.x] : kb_map[i.y][i.x];
       if (key_code == CODE_INVALID || key_code == CODE_EXT)
       {
+        continue;
+      }
+      if (key_code == CODE_RESTORE) {
+        restore_ = true;
         continue;
       }
       new_kb_state[key_code] = true;

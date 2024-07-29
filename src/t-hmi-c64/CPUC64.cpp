@@ -638,6 +638,7 @@ void IRAM_ATTR CPUC64::run()
       {
         setPCToIntVec(getMem(0xfffa) + (getMem(0xfffb) << 8), false);
       }
+      restorenmi = keyboard->restore();
       if (restorenmi)
       {
         restorenmi = false;
@@ -742,9 +743,4 @@ void CPUC64::exeSubroutine(uint16_t addr, uint8_t rega, uint8_t regx,
   sp = tsp;
   sr = tsr;
   pc = tpc;
-}
-
-void CPUC64::setKeycodes(uint8_t keycode1, uint8_t keycode2)
-{
-  // blekb->setKbcodes(keycode1, keycode2);
 }

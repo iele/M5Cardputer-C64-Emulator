@@ -18,7 +18,7 @@
 
 #include "t-hmi-c64/C64.h"
 #include <esp_log.h>
-#include <M5Cardputer.h>
+#include "M5Cardputer.h"
 #include "sd.hpp"
 
 static const char *TAG = "T-HMI-C64";
