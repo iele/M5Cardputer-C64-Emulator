@@ -31,7 +31,7 @@ void Keyboard::init()
   charmap_['\n'] = {CODE_RETURN};
   charmap_[' '] = {CODE_SPACE};
   charmap_['!'] = {CODE_BANG};
-  charmap_['"'] = {CODE_QOUTE};
+  charmap_['"'] = {CODE_QUOTE};
   charmap_['#'] = {CODE_HASH};
   charmap_['$'] = {CODE_DOLLAR};
   charmap_['%'] = {CODE_PERCENT};
@@ -57,7 +57,7 @@ void Keyboard::init()
   charmap_[':'] = {CODE_COLON};
   charmap_[';'] = {CODE_SEMICOLON};
   charmap_['<'] = {CODE_LEFTCHEVRONS};
-  charmap_['='] = {CODE_EUQAL};
+  charmap_['='] = {CODE_EQUALS};
   charmap_['>'] = {CODE_RIGHTCHEVRONS};
   charmap_['?'] = {CODE_QUESTION};
   charmap_['@'] = {CODE_AT};
@@ -234,7 +234,7 @@ void Keyboard::handleKeyboard()
     if (M5Cardputer.Keyboard.isKeyPressed('/'))
       joystickValue &= ~(1 << C64JOYRIGHT);
     // fire
-    if (M5Cardputer.Keyboard.isKeyPressed('A'))
+    if (M5Cardputer.Keyboard.isKeyPressed('a'))
     {
       joystickValue &= ~(1 << C64JOYFIRE);
       joystickFire = true;

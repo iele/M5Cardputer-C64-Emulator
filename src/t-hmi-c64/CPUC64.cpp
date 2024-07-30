@@ -156,15 +156,10 @@ uint8_t CPUC64::getMem(uint16_t addr)
       uint8_t ciaidx = (addr - 0xdc00) % 0x10;
       if (ciaidx == 0x00)
       {
-        // if (joystickmode == 2) {
-        //   // real joystick
         if (keyboard->joystickMode() == 1)
         {
           return keyboard->getJoyStickValue(true, cia1.ciareg[0x00], cia1.ciareg[0x02]);
         }
-        // } else if (kbjoystickmode == 2) {
-        //   // keyboard joystick
-        //   return blekb->getKBJoyValue(true) | (cia1.ciareg[0x00] & 0x80);
         else
         {
           return cia1.ciareg[0x00];
@@ -174,10 +169,6 @@ uint8_t CPUC64::getMem(uint16_t addr)
       {
         if (keyboard->joystickMode() == 2)
         {
-          if ((cia1.ciareg[0x00] == 0x7f) && keyboard->getJoyStickFire())
-          {
-            return 0xef;
-          }
           return keyboard->getJoyStickValue(false, 0, 0);
         }
         else

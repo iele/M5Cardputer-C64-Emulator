@@ -310,6 +310,7 @@ void C64::run(const std::string &path)
   cpu.init(ram, charset_rom, &vic, &keyboard);
 
   led.begin(21, 1);
+  led.brightness(64, true);
 
   // start cpu task
   xTaskCreatePinnedToCore(cpuCode,  // Function to implement the task
@@ -375,7 +376,7 @@ void C64::run(const std::string &path)
   timerEnd(interruptTOD);
   timerEnd(interruptSystem);
 
-  led.clear(false);
+  led.brightness(0, true);
 
   delete ram;
 }
