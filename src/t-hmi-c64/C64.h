@@ -24,6 +24,7 @@
 
 extern  SDCard sdcard;
 
+
 class C64 {
 public:
   static void run(const std::string &path);

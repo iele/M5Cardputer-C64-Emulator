@@ -131,19 +131,7 @@ uint8_t CPUC64::getMem(uint16_t addr)
     else if (addr <= 0xd7ff)
     {
       uint8_t sididx = (addr - 0xd400) % 0x100;
-      if (sididx == 0x1b)
-      {
-        uint32_t rand = esp_random();
-        return (uint8_t)(rand & 0xff);
-      }
-      else if (sididx == 0x1c)
-      {
-        return 0;
-      }
-      else
-      {
-        return sidreg[sididx];
-      }
+      return sid->getreg(sididx);
     }
     // ** Colorram **
     else if (addr <= 0xdbff)
@@ -470,7 +458,7 @@ void CPUC64::setMem(uint16_t addr, uint8_t val)
     else if (addr <= 0xd7ff)
     {
       uint8_t sididx = (addr - 0xd400) % 0x100;
-      sidreg[sididx] = val;
+      sid->setreg(sididx, val);
     }
     // ** Colorram **
     else if (addr <= 0xdbff)
@@ -662,13 +650,14 @@ void CPUC64::initMemAndRegs()
   pc = kernal_rom[addr] + (kernal_rom[addr + 1] << 8);
 }
 
-void CPUC64::init(uint8_t *ram, uint8_t *charrom, VIC *vic, Keyboard *keyboard)
+void CPUC64::init(uint8_t *ram, uint8_t *charrom, VIC *vic, Keyboard *keyboard, AudioPlaySID *sid)
 {
   ESP_LOGI(TAG, "CPUC64::init");
   this->ram = ram;
   this->charrom = charrom;
   this->vic = vic;
   this->keyboard = keyboard;
+  this->sid = sid;
   measuredcycles.store(0, std::memory_order_release);
   adjustcycles.store(0, std::memory_order_release);
   refreshframecolor = true;
