@@ -47,10 +47,7 @@ CPUC64 cpu;
 Keyboard keyboard;
 
 AudioPlaySID playSid;
-volatile unsigned long sidSpeed = 0;
-const int BUFFER_SIZE = 4 * 886;  // needs to be at least (2 CH * 2 BYTES * SAMPLERATE/PAL_CLOCK). Ex. 4 * (44100/50)
-uint8_t audiobuffer[BUFFER_SIZE];
-
+uint8_t audiobuffer[AUDIO_BLOCK_SAMPLES];
 
 uint16_t checkForKeyboardCnt = 0;
 
@@ -66,11 +63,11 @@ static const uint16_t kBasicStrEnd = 0x0031;
 hw_timer_t *interruptProfiling = NULL;
 hw_timer_t *interruptTOD = NULL;
 hw_timer_t *interruptSystem = NULL;
-hw_timer_t *interruptSound = NULL;
 TaskHandle_t cpuTask;
 TaskHandle_t vicTask;
 TaskHandle_t loadTask;
 TaskHandle_t keyboardTask;
+TaskHandle_t soundTask;
 
 void IRAM_ATTR interruptProfilingFunc()
 {
@@ -208,20 +205,6 @@ void IRAM_ATTR interruptSystemFunc()
   }
 }
 
-long sids = 0;
-void IRAM_ATTR isrSound() {
-  cycle_count delta_t = playSid.csdelta;
-  int16_t *ptr = (int16_t *)audiobuffer;
-  for (int j = 0; j < 443; j++)
-  {
-    playSid.sidptr->clock(delta_t);
-    int16_t sample = playSid.sidptr->output();
-    *ptr++ = sample;
-    *ptr++ = sample;
-  }
-  M5Cardputer.Speaker.playRaw(audiobuffer, BUFFER_SIZE, SAMPLERATE, true, 0, 0, true);
-}
-
 void cpuCode(void *parameter)
 {
   cpu.run();
@@ -232,6 +215,27 @@ void vicRefresh(void *parameter)
   while (true)
   {
     vic.refresh(cpu.refreshframecolor);
+    vTaskDelay(1);
+  }
+}
+
+void isrSound(void *parameter)
+{
+  auto last_time = millis();
+  while (true)
+  {
+    auto cur_time = millis();
+    if (last_time + AUDIO_BLOCK_TIME > cur_time)
+    {
+      last_time = cur_time;
+      for (int i = 0; i < AUDIO_BLOCK_SAMPLES; i++)
+      {
+        cycle_count delta_t = playSid.csdelta;
+        playSid.sidptr->clock(delta_t);
+        audiobuffer[i] = playSid.sidptr->output();
+      }
+      M5Cardputer.Speaker.playRaw(audiobuffer, AUDIO_BLOCK_SAMPLES, SAMPLERATE, false, 0, -1, false);
+    }
     vTaskDelay(1);
   }
 }
@@ -352,15 +356,8 @@ void C64::run(const std::string &path)
   timerAlarmWrite(interruptProfiling, 1000000, true);
   timerAlarmEnable(interruptProfiling);
 
-
-  interruptSound = timerBegin(2, 80, true);
-  timerAttachInterrupt(interruptSound, &isrSound, false);
-  unsigned int timerFactor = 1000000 / SAMPLERATE;
-  timerAlarmWrite(interruptSound, timerFactor, true);
-  timerAlarmEnable(interruptSound);
-
   // interrupt each 100 ms to increment CIA real time clock (TOD)
-  interruptTOD = timerBegin(3, 80, true);
+  interruptTOD = timerBegin(2, 80, true);
   timerAttachInterrupt(interruptTOD, &interruptTODFunc, false);
   timerAlarmWrite(interruptTOD, 100000, true);
   timerAlarmEnable(interruptTOD);
@@ -389,6 +386,14 @@ void C64::run(const std::string &path)
                           &keyboardTask,  // Task handle
                           0);             // Core where the task should run
 
+  xTaskCreatePinnedToCore(isrSound,   // Function to implement the task
+                          "sound",    // Name of the task
+                          10000,      // Stack size in words
+                          NULL,       // Task input parameter
+                          10,         // Priority of the task
+                          &soundTask, // Task handle
+                          1);         // Core where the task should run
+
   while (!keyboard.reset())
   {
     vTaskDelay(1000);
@@ -397,19 +402,17 @@ void C64::run(const std::string &path)
   vTaskDelete(cpuTask);
   vTaskDelete(vicTask);
   vTaskDelete(keyboardTask);
+  vTaskDelete(soundTask);
 
   timerAlarmDisable(interruptProfiling);
   timerAlarmDisable(interruptTOD);
   timerAlarmDisable(interruptSystem);
-  timerAlarmDisable(interruptSound);
   timerDetachInterrupt(interruptProfiling);
   timerDetachInterrupt(interruptTOD);
   timerDetachInterrupt(interruptSystem);
-  timerDetachInterrupt(interruptSound);
   timerEnd(interruptProfiling);
   timerEnd(interruptTOD);
   timerEnd(interruptSystem);
-  timerEnd(interruptSound);
 
   led.brightness(0, true);
 
