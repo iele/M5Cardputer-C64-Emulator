@@ -144,7 +144,7 @@ uint8_t CPUC64::getMem(uint16_t addr)
       uint8_t ciaidx = (addr - 0xdc00) % 0x10;
       if (ciaidx == 0x00)
       {
-        if (keyboard->joystickMode() == 1 && keyboard->joystickMode() == 3)
+        if (keyboard->joystickMode() == 1 || keyboard->joystickMode() == 3)
         {
           return keyboard->getJoyStickValue(true, cia1.ciareg[0x00], cia1.ciareg[0x02]);
         }

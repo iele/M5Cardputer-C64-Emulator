@@ -254,18 +254,23 @@ void Keyboard::handleKeyboard()
     if (joystickMode_ == 3)
     {
       joystickValue = 0xff;
-      joystickFire = false;  
+      joystickFire = false;
       Wire.requestFrom(JOY_ADDR, 3);
       if (Wire.available())
       {
         auto x = Wire.read();
-        if (x < -10) joystickValue &= ~(1 << C64JOYLEFT);
-        if (x > 10) joystickValue &= ~(1 << C64JOYRIGHT);
+        if (x > (255 - 60))
+          joystickValue &= ~(1 << C64JOYLEFT);
+        if (x < 60)
+          joystickValue &= ~(1 << C64JOYRIGHT);
         auto y = Wire.read();
-        if (y < -10) joystickValue &= ~(1 << C64JOYUP);
-        if (y > 10) joystickValue &= ~(1 << C64JOYDOWN);
-        auto fire  = Wire.read();
-        if (fire) {
+        if (y < 60)
+          joystickValue &= ~(1 << C64JOYUP);
+        if (y > (255 - 60))
+          joystickValue &= ~(1 << C64JOYDOWN);
+        auto fire = Wire.read();
+        if (fire)
+        {
           joystickValue &= ~(1 << C64JOYFIRE);
           joystickFire = true;
         }
