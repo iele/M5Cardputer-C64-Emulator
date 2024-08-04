@@ -215,28 +215,28 @@ void vicRefresh(void *parameter)
   while (true)
   {
     vic.refresh(cpu.refreshframecolor);
-    vTaskDelay(1);
+    vTaskDelay(portTICK_PERIOD_MS);
   }
 }
 
-void isrSound(void *parameter)
+void handleSound(void *parameter)
 {
   auto last_time = millis();
   while (true)
   {
     auto cur_time = millis();
-    if (last_time + AUDIO_BLOCK_TIME > cur_time)
+    if (last_time + AUDIO_BLOCK_TIME< cur_time)
     {
-      last_time = cur_time;
       for (int i = 0; i < AUDIO_BLOCK_SAMPLES; i++)
       {
         cycle_count delta_t = playSid.csdelta;
         playSid.sidptr->clock(delta_t);
-        audiobuffer[i] = playSid.sidptr->output();
+        auto sound = playSid.sidptr->output();
+        audiobuffer[i] = sound;
       }
-      M5Cardputer.Speaker.playRaw(audiobuffer, AUDIO_BLOCK_SAMPLES, SAMPLERATE, false, 0, -1, false);
+      M5Cardputer.Speaker.playRaw(audiobuffer, AUDIO_BLOCK_SAMPLES, SAMPLERATE, false, 1, -1, true);
     }
-    vTaskDelay(1);
+    vTaskDelay(AUDIO_BLOCK_TIME / portTICK_PERIOD_MS / 2);
   }
 }
 
@@ -253,17 +253,19 @@ void handleKeyboard(void *parameter)
     {
       led.fill(rgb_from_values(255, 0, 0), true);
     }
-    else
+    else if (keyboard.joystickMode() == 2)
     {
       led.fill(rgb_from_values(0, 255, 0), true);
+    } else {
+      led.fill(rgb_from_values(255, 0, 255), true);
     }
-    vTaskDelay(50);
+    vTaskDelay(50*portTICK_PERIOD_MS);
   }
 }
 
 void loadFile(void *parameter)
 {
-  vTaskDelay(3000);
+  vTaskDelay(3000*portTICK_PERIOD_MS);
   std::string path = (const char *)parameter;
   if (!path.empty())
   {
@@ -386,17 +388,17 @@ void C64::run(const std::string &path)
                           &keyboardTask,  // Task handle
                           0);             // Core where the task should run
 
-  xTaskCreatePinnedToCore(isrSound,   // Function to implement the task
-                          "sound",    // Name of the task
-                          10000,      // Stack size in words
-                          NULL,       // Task input parameter
-                          10,         // Priority of the task
-                          &soundTask, // Task handle
-                          1);         // Core where the task should run
+  //xTaskCreatePinnedToCore(handleSound,   // Function to implement the task
+  //                        "sound",    // Name of the task
+  //                        10000,      // Stack size in words
+  //                        NULL,       // Task input parameter
+  //                        10,         // Priority of the task
+  //                        &soundTask, // Task handle
+  //                        1);         // Core where the task should run
 
   while (!keyboard.reset())
   {
-    vTaskDelay(1000);
+    vTaskDelay(1000*portTICK_PERIOD_MS);
   }
 
   vTaskDelete(cpuTask);

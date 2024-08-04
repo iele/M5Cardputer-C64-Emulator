@@ -227,7 +227,7 @@ void setupWiFi_by_manager() {
 
 
 long sids = 0;
-void IRAM_ATTR isrSound() {
+void IRAM_ATTR handleSound() {
   AudioPlaySID playSid = c64_PlaySid();
   cycle_count delta_t = playSid.csdelta;
   playSid.sidptr->clock(delta_t);
@@ -242,7 +242,7 @@ void IRAM_ATTR isrSound() {
 
 void setupSoundTimer(void * pvParameters) {
   timer = timerBegin(0, 80, true);                //Begin timer with 1 MHz frequency (80MHz/80)
-  timerAttachInterrupt(timer, &isrSound, true);   //Attach the interrupt to Timer1
+  timerAttachInterrupt(timer, &handleSound, true);   //Attach the interrupt to Timer1
   unsigned int timerFactor = 1000000 / SAMPLERATE; //Calculate the time interval between two readings, or more accurately, the number of cycles between two readings
   timerAlarmWrite(timer, timerFactor, true);      //Initialize the timer
   timerAlarmEnable(timer);

@@ -22,10 +22,13 @@
 #include <unordered_map>
 #include <mutex>
 #include "M5Cardputer.h"
+#include "Wire.h"
 #include "utility/Button_Class.hpp"
 
 #define KEY_SIZE 0xFF
 #define INLINE IRAM_ATTR inline __attribute__((always_inline, flatten))
+
+#define JOY_ADDR 0x52
 
 // clang-format off
 typedef enum code {
@@ -113,6 +116,7 @@ private:
   bool joystickFire;
 
   m5::Button_Class btnA;
+
 public:
   INLINE uint8_t keyboard_matrix_row(int col) { return keyboard_matrix_[col]; };
   INLINE int joystickMode() { return joystickMode_; };

@@ -121,7 +121,16 @@ void Keyboard::init()
   charmap_['{'] = {CODE_LEFTBRACES};
   charmap_['}'] = {CODE_RIGHTBRACES};
 
-  joystickMode_ = false;
+  Wire.begin(2, 1, 400000UL);
+  Wire.requestFrom(JOY_ADDR, 3);
+  if (Wire.available())
+  {
+    joystickMode_ = 3;
+  }
+  else
+  {
+    joystickMode_ = 0;
+  }
   reset_ = false;
 }
 
@@ -209,7 +218,7 @@ void Keyboard::handleKeyboard()
   {
     reset_ = ~reset_;
   }
-  if (btnA.wasClicked())
+  if (btnA.wasClicked() && joystickMode_ != 3)
   {
     joystickMode_ = joystickMode_ < 2 ? joystickMode_ + 1 : 0;
   }
@@ -217,7 +226,7 @@ void Keyboard::handleKeyboard()
   M5Cardputer.Keyboard.updateKeyList();
   M5Cardputer.Keyboard.updateKeysState();
   std::vector<Point2D_t> keys = M5Cardputer.Keyboard.keyList();
-  if (joystickMode_ != 0)
+  if (joystickMode_ != 0 && joystickMode_ != 3)
   {
     joystickValue = 0xff;
     joystickFire = false;
@@ -242,6 +251,27 @@ void Keyboard::handleKeyboard()
   }
   else
   {
+    if (joystickMode_ == 3)
+    {
+      joystickValue = 0xff;
+      joystickFire = false;  
+      Wire.requestFrom(JOY_ADDR, 3);
+      if (Wire.available())
+      {
+        auto x = Wire.read();
+        if (x < -10) joystickValue &= ~(1 << C64JOYLEFT);
+        if (x > 10) joystickValue &= ~(1 << C64JOYRIGHT);
+        auto y = Wire.read();
+        if (y < -10) joystickValue &= ~(1 << C64JOYUP);
+        if (y > 10) joystickValue &= ~(1 << C64JOYDOWN);
+        auto fire  = Wire.read();
+        if (fire) {
+          joystickValue &= ~(1 << C64JOYFIRE);
+          joystickFire = true;
+        }
+      }
+    }
+
     bool new_kb_state[KEY_SIZE] = {0};
     // map key_code
     bool use_upper = false;
@@ -265,7 +295,8 @@ void Keyboard::handleKeyboard()
       {
         continue;
       }
-      if (key_code == CODE_RESTORE) {
+      if (key_code == CODE_RESTORE)
+      {
         restore_ = true;
         continue;
       }
