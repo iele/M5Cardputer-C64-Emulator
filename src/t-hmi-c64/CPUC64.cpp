@@ -161,6 +161,10 @@ uint8_t CPUC64::getMem(uint16_t addr)
         }
         else
         {
+          if (keyboard->joystickMode() == 4)
+          {
+            return keyboard->getJoyStickValue(false, 0, 0);
+          }
           //  keyboard
           if (cia1.ciareg[0x00] == 0xff)
             return 0xff;
@@ -477,7 +481,10 @@ void CPUC64::setMem(uint16_t addr, uint8_t val)
       {
         cia1.ciareg[ciaidx] = val & cia1.ciareg[0x03];
       }
-      setCommonCIAReg(cia1, ciaidx, val);
+      else
+      {
+        setCommonCIAReg(cia1, ciaidx, val);
+      }
     }
     // ** CIA 2 **
     else if (addr <= 0xddff)
@@ -508,6 +515,11 @@ void CPUC64::setMem(uint16_t addr, uint8_t val)
       else if (ciaidx == 0x01)
       {
         cia2.ciareg[ciaidx] = val & cia2.ciareg[0x03];
+      }
+      else if (ciaidx == 0x0d)
+      {
+        nmiAck = true;
+        setCommonCIAReg(cia2, ciaidx, val);
       }
       else
       {
@@ -566,73 +578,78 @@ void IRAM_ATTR CPUC64::run()
       vTaskDelay(portTICK_PERIOD_MS);
       continue;
     }
-    execute(getMem(pc++));
-    // 4 = average number of cycles for an instruction
-    if (numofcycles >= 63 - (4 / 2) - badlinecycles)
+    // prepare next rasterline
+    badlinecycles = vic->nextRasterline();
+    if (vic->screenblank)
     {
-      numofcyclespersecond += numofcycles;
-      badlinecycles = vic->nextRasterline();
-      // raster line interrupt?
-      if ((vic->vicreg[0x19] & 0x80) && (vic->vicreg[0x1a] & 1) && (!iflag))
-      {
-        setPCToIntVec(getMem(0xfffe) + (getMem(0xffff) << 8), false);
-        for (uint8_t i = 0; i < 6; i++)
-        {
-          execute(getMem(pc++));
-        }
-      }
-      vic->drawRasterline();
-      // sprite collision interrupt?
-      if ((vic->vicreg[0x19] & 0x80) && (vic->vicreg[0x1a] & 6) && (!iflag))
-      {
-        setPCToIntVec(getMem(0xfffe) + (getMem(0xffff) << 8), false);
-      }
-      // CIA 1 TOD alarm
-      if (cia1.checkAlarm() && (!iflag))
-      {
-        setPCToIntVec(getMem(0xfffe) + (getMem(0xffff) << 8), false);
-      }
-      // CIA 1 Timer A
-      if (cia1.checkTimerA(numofcycles) && (!iflag))
-      {
-        setPCToIntVec(getMem(0xfffe) + (getMem(0xffff) << 8), false);
-      }
-      // CIA 1 Timer B
-      if (cia1.checkTimerB(numofcycles) && (!iflag))
-      {
-        setPCToIntVec(getMem(0xfffe) + (getMem(0xffff) << 8), false);
-      }
-      // CIA 2 TOD alarm
-      if (cia2.checkAlarm())
-      {
-        setPCToIntVec(getMem(0xfffa) + (getMem(0xfffb) << 8), false);
-      }
-      // CIA 2 Timer A
-      if (cia2.checkTimerA(numofcycles))
-      {
-        setPCToIntVec(getMem(0xfffa) + (getMem(0xfffb) << 8), false);
-      }
-      // CIA 2 Timer B
-      if (cia2.checkTimerB(numofcycles))
-      {
-        setPCToIntVec(getMem(0xfffa) + (getMem(0xfffb) << 8), false);
-      }
-      restorenmi = keyboard->restore();
-      if (restorenmi)
-      {
-        restorenmi = false;
-        setPCToIntVec(getMem(0xfffa) + (getMem(0xfffb) << 8), false);
-      }
-      // throttle 6502 CPU
-      measuredcycles.fetch_add(numofcycles, std::memory_order_release);
-      uint16_t adjustcyclestmp = adjustcycles.load(std::memory_order_acquire);
-      if (adjustcyclestmp > 0)
-      {
-        ets_delay_us(adjustcyclestmp);
-        adjustcycles.store(0, std::memory_order_release);
-      }
-      // reset numofcycles
-      numofcycles = 0;
+      badlinecycles = 0;
+    }
+    // raster line interrupt?
+    if ((vic->vicreg[0x19] & 0x80) && (vic->vicreg[0x1a] & 1) && (!iflag))
+    {
+      setPCToIntVec(getMem(0xfffe) + (getMem(0xffff) << 8), false);
+    }
+    // execute CPU cycles
+    // (4 = average number of cycles for an instruction)
+    while (numofcycles < 63 - (4 / 2) - badlinecycles)
+    {
+      execute(getMem(pc++));
+    }
+    numofcyclespersecond += numofcycles;
+    uint32_t numofcyclessaved = numofcycles;
+    numofcycles = 0;
+    // draw rasterline
+    vic->drawRasterline();
+    // sprite collision interrupt?
+    if ((vic->vicreg[0x19] & 0x80) && (vic->vicreg[0x1a] & 6) && (!iflag))
+    {
+      setPCToIntVec(getMem(0xfffe) + (getMem(0xffff) << 8), false);
+    }
+    // CIA 1 TOD alarm
+    if (cia1.checkAlarm() && (!iflag))
+    {
+      setPCToIntVec(getMem(0xfffe) + (getMem(0xffff) << 8), false);
+    }
+    // CIA 1 Timer A
+    if (cia1.checkTimerA(numofcyclessaved) && (!iflag))
+    {
+      setPCToIntVec(getMem(0xfffe) + (getMem(0xffff) << 8), false);
+    }
+    // CIA 1 Timer B
+    if (cia1.checkTimerB(numofcyclessaved) && (!iflag))
+    {
+      setPCToIntVec(getMem(0xfffe) + (getMem(0xffff) << 8), false);
+    }
+    // CIA 2 TOD alarm
+    if (cia2.checkAlarm() && nmiAck)
+    {
+      nmiAck = false;
+      setPCToIntVec(getMem(0xfffa) + (getMem(0xfffb) << 8), false);
+    }
+    // CIA 2 Timer A
+    if (cia2.checkTimerA(numofcyclessaved) && nmiAck)
+    {
+      nmiAck = false;
+      setPCToIntVec(getMem(0xfffa) + (getMem(0xfffb) << 8), false);
+    }
+    // CIA 2 Timer B
+    if (cia2.checkTimerB(numofcyclessaved) && nmiAck)
+    {
+      nmiAck = false;
+      setPCToIntVec(getMem(0xfffa) + (getMem(0xfffb) << 8), false);
+    }
+    if (restorenmi && nmiAck)
+    {
+      restorenmi = false;
+      setPCToIntVec(getMem(0xfffa) + (getMem(0xfffb) << 8), false);
+    }
+    // throttle 6502 CPU
+    measuredcycles.fetch_add(numofcyclessaved, std::memory_order_release);
+    uint16_t adjustcyclestmp = adjustcycles.load(std::memory_order_acquire);
+    if (adjustcyclestmp > 0)
+    {
+      ets_delay_us(adjustcyclestmp);
+      adjustcycles.store(0, std::memory_order_release);
     }
   }
 }
@@ -646,11 +663,12 @@ void CPUC64::initMemAndRegs()
   iflag = true;
   dflag = false;
   bflag = false;
+  nmiAck = true;
   uint16_t addr = 0xfffc - 0xe000;
   pc = kernal_rom[addr] + (kernal_rom[addr + 1] << 8);
 }
 
-void CPUC64::init(uint8_t *ram, uint8_t *charrom, VIC *vic, Keyboard *keyboard, AudioPlaySID *sid)
+void CPUC64::init(uint8_t *ram, uint8_t *charrom, VIC *vic, Keyboard *keyboard, SidRegPlayer *sid)
 {
   ESP_LOGI(TAG, "CPUC64::init");
   this->ram = ram;

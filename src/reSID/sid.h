@@ -85,7 +85,8 @@ public:
 
   // 16-bit output (AUDIO OUT).
   int output();
-
+  // n-bit output.
+  int output(int bits);
 
 protected:
 
@@ -93,7 +94,7 @@ protected:
   RESID_INLINE int clock_interpolate(cycle_count& delta_t, short* buf, int n);
 
 	Voice voice[3];
-  Filter filter;
+  SidFilter filter;
   ExternalFilter extfilt;
   Potentiometer potx;
   Potentiometer poty;

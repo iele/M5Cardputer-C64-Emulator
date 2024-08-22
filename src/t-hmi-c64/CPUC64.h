@@ -24,7 +24,7 @@
 #include <cstdint>
 #include <mutex>
 
-#include "sid/AudioPlaySID.h"
+#include "SidRegPlayer.h"
 
 class CPUC64 : public CPU6502 {
 private:
@@ -44,6 +44,8 @@ private:
 
   std::mutex pcMutex;
 
+  bool nmiAck;
+
   inline void adaptVICBaseAddrs(bool fromcia) __attribute__((always_inline));
   inline void decodeRegister1(uint8_t val) __attribute__((always_inline));
 
@@ -51,7 +53,7 @@ public:
   VIC *vic;
   CIA cia1;
   CIA cia2;
-  AudioPlaySID *sid;
+  SidRegPlayer *sid;
 
   CPUC64() : cia1(true), cia2(false) {}
 
@@ -80,7 +82,7 @@ public:
   void run() override;
 
   void initMemAndRegs();
-  void init(uint8_t *ram, uint8_t *charrom, VIC *vic, Keyboard *keyboard, AudioPlaySID *sid);
+  void init(uint8_t *ram, uint8_t *charrom, VIC *vic, Keyboard *keyboard, SidRegPlayer *sid);
   void setPC(uint16_t pc);
   void exeSubroutine(uint16_t addr, uint8_t rega, uint8_t regx, uint8_t regy);
 };

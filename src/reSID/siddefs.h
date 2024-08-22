@@ -28,6 +28,7 @@
 #define RESID_INLINE inline
 
 // Support namespace
+//#define RESID_NAMESPACE
 
 #ifdef RESID_NAMESPACE
 #   define RESID_NAMESPACE_START \
@@ -40,7 +41,6 @@
 #   define RESID_NAMESPACE_STOP
 #endif
 
-#define VERSION "1.0.0"
 
 RESID_NAMESPACE_START
 
@@ -56,9 +56,7 @@ const bool false = 0;
 // cycle_count, and sound_sample). GNU does not support 16-bit machines
 // (GNU Coding Standards: Portability between CPUs), so this should be
 // a valid assumption.
-#include <stdint.h>
-#include <stdio.h>
-
+#include <Arduino.h>
 typedef uint16_t reg4;
 typedef uint16_t reg8;
 typedef uint16_t reg12;
@@ -78,7 +76,7 @@ extern "C"
 #ifndef __VERSION_CC__
 extern const char* resid_version_string;
 #else
-const char* resid_version_string = VERSION;
+const char* resid_version_string = "1.0";
 #endif
 }
 

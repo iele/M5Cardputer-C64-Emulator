@@ -49,6 +49,7 @@ SID::SID()
   voice[1].set_sync_source(&voice[0]);
   voice[2].set_sync_source(&voice[1]);
 
+  // set_sampling_parameters(985248, SAMPLE_FAST, AUDIO_SAMPLE_RATE_EXACT);  
   set_sampling_parameters(985248, SAMPLE_FAST, 22050);  
 
   bus_value = 0;
@@ -122,22 +123,33 @@ void SID::input(int sample)
 
 // ----------------------------------------------------------------------------
 // Read sample from audio output.
+// Both 16-bit and n-bit output is provided.
 // ----------------------------------------------------------------------------
 int SID::output()
 {
   const int range = 1 << 16;
   const int half = range >> 1;
   int sample = extfilt.output()/((4095*255 >> 7)*3*15*2/range);
-	
-	//asm ("ssat %0, #16, %1" : "=r" (sample) : "r" (sample));
-	
   if (sample >= half) {
     return half - 1;
   }
   if (sample < -half) {
     return -half;
   }
-	
+  return sample;
+}
+
+int SID::output(int bits)
+{
+  const int range = 1 << bits;
+  const int half = range >> 1;
+  int sample = extfilt.output()/((4095*255 >> 7)*3*15*2/range);
+  if (sample >= half) {
+    return half - 1;
+  }
+  if (sample < -half) {
+    return -half;
+  }
   return sample;
 }
 

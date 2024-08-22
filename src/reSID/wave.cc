@@ -19,10 +19,6 @@
 
 #define __WAVE_CC__
 #include "wave.h"
-#include "wave6581__ST.cpp"
-#include "wave6581_P_T.cpp"
-#include "wave6581_PS_.cpp"
-#include "wave6581_PST.cpp"
 
 RESID_NAMESPACE_START
 

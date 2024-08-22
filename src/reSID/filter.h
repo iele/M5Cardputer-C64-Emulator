@@ -17,8 +17,8 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //  ---------------------------------------------------------------------------
 
-#ifndef __FILTER_H__
-#define __FILTER_H__
+#ifndef __SIDFILTER_H__
+#define __SIDFILTER_H__
 
 #include "siddefs.h"
 //#include "spline.h"
@@ -121,10 +121,10 @@ RESID_NAMESPACE_START
 //          Vw
 //
 // ----------------------------------------------------------------------------
-class Filter
+class SidFilter
 {
 public:
-  Filter();
+  SidFilter();
 
   void enable_filter(bool enable);
  // void set_chip_model(chip_model model);
@@ -218,7 +218,7 @@ friend class SID;
 // SID clocking - 1 cycle.
 // ----------------------------------------------------------------------------
 RESID_INLINE
-void Filter::clock(sound_sample voice1,
+void SidFilter::clock(sound_sample voice1,
 		   sound_sample voice2,
 		   sound_sample voice3,
 		   sound_sample ext_in)
@@ -340,7 +340,7 @@ void Filter::clock(sound_sample voice1,
 // SID clocking - delta_t cycles.
 // ----------------------------------------------------------------------------
 RESID_INLINE
-void Filter::clock(cycle_count delta_t,
+void SidFilter::clock(cycle_count delta_t,
 		   sound_sample voice1,
 		   sound_sample voice2,
 		   sound_sample voice3,
@@ -481,7 +481,7 @@ void Filter::clock(cycle_count delta_t,
 // SID audio output (20 bits).
 // ----------------------------------------------------------------------------
 RESID_INLINE
-sound_sample Filter::output()
+sound_sample SidFilter::output()
 {
   // This is handy for testing.
   if (!enabled) {
@@ -536,4 +536,4 @@ sound_sample Filter::output()
 
 RESID_NAMESPACE_STOP
 
-#endif // not __FILTER_H__
+#endif // not __SIDFILTER_H__

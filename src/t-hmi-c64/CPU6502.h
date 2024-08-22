@@ -515,6 +515,7 @@ protected:
   bool bflag;
   bool vflag;
   bool nflag;
+  bool iflag;
 
   uint8_t a;
   uint8_t x;
@@ -532,9 +533,6 @@ public:
 
   // stop cpu
   std::atomic<bool> cpuhalted;
-
-  // interrupt flag
-  bool iflag;
 
   // pure virtual methods
   virtual void run() = 0;

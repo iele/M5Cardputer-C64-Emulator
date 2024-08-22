@@ -17,10 +17,11 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //  ---------------------------------------------------------------------------
 
-#define __FILTER_CC__
+#define __SIDFILTER_CC__
 #include "filter.h"
 
 RESID_NAMESPACE_START
+
 
 // Maximum cutoff frequency is specified as
 // FCmax = 2.6e-5/C = 2.6e-5/2200e-12 = 11818.
@@ -44,7 +45,7 @@ RESID_NAMESPACE_START
 // NB! Cutoff frequency characteristics may vary, we have modeled two
 // particular Commodore 64s.
 /*
-const fc_point Filter::f0_points_6581[] =
+const fc_point SidFilter::f0_points_6581[] =
 {
   //  FC      f         FCHI FCLO
   // ----------------------------
@@ -82,7 +83,7 @@ const fc_point Filter::f0_points_6581[] =
 };
 */
 /*
-const fc_point Filter::f0_points_8580[] =
+const fc_point SidFilter::f0_points_8580[] =
 {
   //  FC      f         FCHI FCLO
   // ----------------------------
@@ -111,7 +112,7 @@ const fc_point Filter::f0_points_8580[] =
 // ----------------------------------------------------------------------------
 // Constructor.
 // ----------------------------------------------------------------------------
-Filter::Filter()
+SidFilter::SidFilter()
 {
   fc = 0;
 
@@ -125,7 +126,7 @@ Filter::Filter()
 
   vol = 0;
 
-  // State of filter.
+  // State of SidFilter.
   Vhp = 0;
   Vbp = 0;
   Vlp = 0;
@@ -157,9 +158,9 @@ Filter::Filter()
 
 
 // ----------------------------------------------------------------------------
-// Enable filter.
+// Enable SidFilter.
 // ----------------------------------------------------------------------------
-void Filter::enable_filter(bool enable)
+void SidFilter::enable_filter(bool enable)
 {
   enabled = enable;
 }
@@ -169,7 +170,7 @@ void Filter::enable_filter(bool enable)
 // Set chip model.
 // ----------------------------------------------------------------------------
 /*
-void Filter::set_chip_model(chip_model model)
+void SidFilter::set_chip_model(chip_model model)
 {
   if (model == MOS6581) {
     // The mixer has a small input DC offset. This is found as follows:
@@ -206,7 +207,7 @@ void Filter::set_chip_model(chip_model model)
 // ----------------------------------------------------------------------------
 // SID reset.
 // ----------------------------------------------------------------------------
-void Filter::reset()
+void SidFilter::reset()
 {
   fc = 0;
 
@@ -220,7 +221,7 @@ void Filter::reset()
 
   vol = 0;
 
-  // State of filter.
+  // State of SidFilter.
   Vhp = 0;
   Vbp = 0;
   Vlp = 0;
@@ -234,19 +235,19 @@ void Filter::reset()
 // ----------------------------------------------------------------------------
 // Register functions.
 // ----------------------------------------------------------------------------
-void Filter::writeFC_LO(reg8 fc_lo)
+void SidFilter::writeFC_LO(reg8 fc_lo)
 {
   fc = (fc & 0x7f8) | (fc_lo & 0x007);
   set_w0();
 }
 
-void Filter::writeFC_HI(reg8 fc_hi)
+void SidFilter::writeFC_HI(reg8 fc_hi)
 {
   fc = (((unsigned int)fc_hi << 3) & 0x7f8) | (fc & 0x007);
   set_w0();
 }
 
-void Filter::writeRES_FILT(reg8 res_filt)
+void SidFilter::writeRES_FILT(reg8 res_filt)
 {
   res = (res_filt >> 4) & 0x0f;
   set_Q();
@@ -254,7 +255,7 @@ void Filter::writeRES_FILT(reg8 res_filt)
   filt = res_filt & 0x0f;
 }
 
-void Filter::writeMODE_VOL(reg8 mode_vol)
+void SidFilter::writeMODE_VOL(reg8 mode_vol)
 {
   voice3off = mode_vol & 0x80;
 
@@ -263,8 +264,8 @@ void Filter::writeMODE_VOL(reg8 mode_vol)
   vol = mode_vol & 0x0f;
 }
 
-// Set filter cutoff frequency.
-void Filter::set_w0()
+// Set SidFilter cutoff frequency.
+void SidFilter::set_w0()
 {
   const float pi = 3.1415926535897932385;
 
@@ -272,20 +273,20 @@ void Filter::set_w0()
   // shifting 20 times (2 ^ 20 = 1048576).
   w0 = static_cast<sound_sample>(2.0*pi*f0[fc]*1.048576);
 
-  // Limit f0 to 16kHz to keep 1 cycle filter stable.
+  // Limit f0 to 16kHz to keep 1 cycle SidFilter stable.
   const sound_sample w0_max_1 = static_cast<sound_sample>(2.0*pi*16000.0*1.048576);
   w0_ceil_1 = w0 <= w0_max_1 ? w0 : w0_max_1;
 
-  // Limit f0 to 4kHz to keep delta_t cycle filter stable.
+  // Limit f0 to 4kHz to keep delta_t cycle SidFilter stable.
   const sound_sample w0_max_dt = static_cast<sound_sample>(2.0*pi*4000.0*1.048576);
   w0_ceil_dt = w0 <= w0_max_dt ? w0 : w0_max_dt;
 }
 
-// Set filter resonance.
-void Filter::set_Q()
+// Set SidFilter resonance.
+void SidFilter::set_Q()
 {
   // Q is controlled linearly by res. Q has approximate range [0.707, 1.7].
-  // As resonance is increased, the filter must be clocked more often to keep
+  // As resonance is increased, the SidFilter must be clocked more often to keep
   // stable.
 
   // The coefficient 1024 is dispensed of later by right-shifting 10 times
@@ -299,10 +300,10 @@ void Filter::set_Q()
 
 // ----------------------------------------------------------------------------
 // Return the array of spline interpolation points used to map the FC register
-// to filter cutoff frequency.
+// to SidFilter cutoff frequency.
 // ----------------------------------------------------------------------------
 /*
-void Filter::fc_default(const fc_point*& points, int& count)
+void SidFilter::fc_default(const fc_point*& points, int& count)
 {
   points = f0_points;
   count = f0_count;
@@ -311,13 +312,13 @@ void Filter::fc_default(const fc_point*& points, int& count)
 // ----------------------------------------------------------------------------
 // Given an array of interpolation points p with n points, the following
 // statement will specify a new FC mapping:
-//   interpolate(p, p + n - 1, filter.fc_plotter(), 1.0);
+//   interpolate(p, p + n - 1, SidFilter.fc_plotter(), 1.0);
 // Note that the x range of the interpolation points *must* be [0, 2047],
 // and that additional end points *must* be present since the end points
 // are not interpolated.
 // ----------------------------------------------------------------------------
 /*
-PointPlotter<sound_sample> Filter::fc_plotter()
+PointPlotter<sound_sample> SidFilter::fc_plotter()
 {
   return PointPlotter<sound_sample>(f0);
 }

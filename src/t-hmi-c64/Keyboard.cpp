@@ -218,15 +218,22 @@ void Keyboard::handleKeyboard()
   {
     reset_ = ~reset_;
   }
-  if (btnA.wasClicked() && joystickMode_ != 3)
+  if (btnA.wasClicked())
   {
-    joystickMode_ = joystickMode_ < 2 ? joystickMode_ + 1 : 0;
+    if (joystickMode_ < 3)
+    {
+      joystickMode_ = joystickMode_ < 2 ? joystickMode_ + 1 : 0;
+    }
+    else
+    {
+      joystickMode_ = joystickMode_ == 3 ? 4 : 3;
+    }
   }
 
   M5Cardputer.Keyboard.updateKeyList();
   M5Cardputer.Keyboard.updateKeysState();
   std::vector<Point2D_t> keys = M5Cardputer.Keyboard.keyList();
-  if (joystickMode_ != 0 && joystickMode_ != 3)
+  if (joystickMode_ != 0 && joystickMode_ != 3 && joystickMode_ != 4)
   {
     joystickValue = 0xff;
     joystickFire = false;
@@ -251,7 +258,7 @@ void Keyboard::handleKeyboard()
   }
   else
   {
-    if (joystickMode_ == 3)
+    if (joystickMode_ == 3 || joystickMode_ == 4)
     {
       joystickValue = 0xff;
       joystickFire = false;

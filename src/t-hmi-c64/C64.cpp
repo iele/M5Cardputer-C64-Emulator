@@ -27,8 +27,6 @@
 #include <algorithm>
 #include "LiteLED.h"
 
-#include "sid/AudioPlaySID.h"
-
 #define LED_TYPE LED_STRIP_SK6812
 #define LED_TYPE_IS_RGBW 1
 #define LED_BRIGHT 245
@@ -46,8 +44,12 @@ VIC vic;
 CPUC64 cpu;
 Keyboard keyboard;
 
-AudioPlaySID playSid;
-uint8_t audiobuffer[AUDIO_BLOCK_SAMPLES];
+SID sid;
+SidRegPlayer player(&sid);
+SidRegPlayerConfig sid_cfg;
+
+const int BUFFER_SIZE = 4 * 882;
+uint8_t audiobuffer[3][BUFFER_SIZE];
 
 uint16_t checkForKeyboardCnt = 0;
 
@@ -221,22 +223,17 @@ void vicRefresh(void *parameter)
 
 void handleSound(void *parameter)
 {
-  auto last_time = millis();
+  long micro = micros();
+  int i = 0;
   while (true)
   {
-    auto cur_time = millis();
-    if (last_time + AUDIO_BLOCK_TIME< cur_time)
-    {
-      for (int i = 0; i < AUDIO_BLOCK_SAMPLES; i++)
-      {
-        cycle_count delta_t = playSid.csdelta;
-        playSid.sidptr->clock(delta_t);
-        auto sound = playSid.sidptr->output();
-        audiobuffer[i] = sound;
-      }
-      M5Cardputer.Speaker.playRaw(audiobuffer, AUDIO_BLOCK_SAMPLES, SAMPLERATE, false, 1, -1, true);
-    }
-    vTaskDelay(AUDIO_BLOCK_TIME / portTICK_PERIOD_MS / 2);
+    i++;
+    if (micros() - micro < player.getFramePeriod())
+      continue;
+    micro = micros();
+
+    size_t l = player.read(audiobuffer[i%3], player.getSamplesPerFrame());
+    M5Cardputer.Speaker.playRaw((int16_t*)audiobuffer[i%3], l*2, sid_cfg.samplerate, true, 1, -1, false);
   }
 }
 
@@ -245,27 +242,46 @@ void handleKeyboard(void *parameter)
   while (true)
   {
     keyboard.handleKeyboard();
-    if (keyboard.joystickMode() == 0)
+    switch (keyboard.joystickMode())
     {
-      led.fill(rgb_from_values(255, 255, 255), true);
-    }
-    else if (keyboard.joystickMode() == 1)
+    case 0:
     {
+      // keyboard
       led.fill(rgb_from_values(255, 0, 0), true);
+      break;
     }
-    else if (keyboard.joystickMode() == 2)
+    case 1:
     {
-      led.fill(rgb_from_values(0, 255, 0), true);
-    } else {
-      led.fill(rgb_from_values(255, 0, 255), true);
+      // j1
+      led.fill(rgb_from_values(0, 0, 255), true);
+      break;
     }
-    vTaskDelay(50*portTICK_PERIOD_MS);
+    case 2:
+    {
+      // j2
+      led.fill(rgb_from_values(0, 255, 0), true);
+      break;
+    }
+    case 3:
+    {
+      // keyboard + j1
+      led.fill(rgb_from_values(255, 0, 255), true);
+      break;
+    }
+    case 4:
+    {
+      // keyboard + j2
+      led.fill(rgb_from_values(255, 255, 0), true);
+      break;
+    }
+    }
+    vTaskDelay(50 * portTICK_PERIOD_MS);
   }
 }
 
 void loadFile(void *parameter)
 {
-  vTaskDelay(3000*portTICK_PERIOD_MS);
+  vTaskDelay(3000 * portTICK_PERIOD_MS);
   std::string path = (const char *)parameter;
   if (!path.empty())
   {
@@ -280,6 +296,7 @@ void loadFile(void *parameter)
       for (char c : bas)
       {
         keyboard.typeCharacter(c);
+        vTaskDelay(20);
       }
       vTaskDelete(NULL);
       return;
@@ -327,12 +344,13 @@ void C64::run(const std::string &path)
   // init VIC
   vic.init(ram, charset_rom);
 
-  playSid.begin();
+  player.setDefaultConfig(&sid_cfg);
+  player.begin(&sid_cfg);
 
   keyboard.init();
 
   // init CPU
-  cpu.init(ram, charset_rom, &vic, &keyboard, &playSid);
+  cpu.init(ram, charset_rom, &vic, &keyboard, &player);
 
   led.begin(21, 1);
   led.brightness(64, true);
@@ -388,17 +406,17 @@ void C64::run(const std::string &path)
                           &keyboardTask,  // Task handle
                           0);             // Core where the task should run
 
-  //xTaskCreatePinnedToCore(handleSound,   // Function to implement the task
-  //                        "sound",    // Name of the task
-  //                        10000,      // Stack size in words
-  //                        NULL,       // Task input parameter
-  //                        10,         // Priority of the task
-  //                        &soundTask, // Task handle
-  //                        1);         // Core where the task should run
+  //xTaskCreatePinnedToCore(handleSound, // Function to implement the task
+  //                        "sound",     // Name of the task
+  //                        10000,       // Stack size in words
+  //                        NULL,        // Task input parameter
+  //                        10,          // Priority of the task
+  //                        &soundTask,  // Task handle
+  //                        1);          // Core where the task should run
 
   while (!keyboard.reset())
   {
-    vTaskDelay(1000*portTICK_PERIOD_MS);
+    vTaskDelay(1000 * portTICK_PERIOD_MS);
   }
 
   vTaskDelete(cpuTask);
@@ -418,7 +436,7 @@ void C64::run(const std::string &path)
 
   led.brightness(0, true);
 
-  playSid.stop();
+  player.stop();
 
   delete ram;
 }
